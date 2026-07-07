@@ -604,6 +604,7 @@ export default function App() {
                       selectedBaby={selectedBaby} 
                       setSelectedBaby={setSelectedBaby} 
                       babyInfo={calculateBabyInfo()}
+                      babyName={babyName}
                       onLogOut={() => {
                         setIsLoggedIn(false);
                         setAuthView('login');
@@ -2002,6 +2003,7 @@ function ScreenProfile({
   selectedBaby, 
   setSelectedBaby, 
   babyInfo,
+  babyName,
   onLogOut 
 }: { 
   onNavigate: (s: string) => void; 
@@ -2009,6 +2011,7 @@ function ScreenProfile({
   selectedBaby: string; 
   setSelectedBaby: (b: string) => void; 
   babyInfo: { ageString: string };
+  babyName: string;
   onLogOut?: () => void 
 }) {
   const settingsList = [
@@ -2016,6 +2019,8 @@ function ScreenProfile({
     { name: 'Updates & notifications', icon: '🔔' },
     { name: 'Co-parent Sync / Partner role', icon: '👥' },
   ];
+
+  const defaultBabyName = babyName || 'Emilia';
 
   return (
     <div className="p-6 pt-3 animate-fade-in">
@@ -2038,12 +2043,12 @@ function ScreenProfile({
         {/* Toggle Baby Name */}
         <div className="flex gap-2 bg-brand-cream border border-brand-beige p-1 rounded-xl">
           <button 
-            onClick={() => setSelectedBaby(selectedBaby)}
+            onClick={() => setSelectedBaby(defaultBabyName)}
             className={`px-3 py-1 text-[11px] font-bold rounded-lg transition ${
-              selectedBaby !== 'Leo' ? 'bg-brand-green text-white' : 'text-gray-500 hover:text-gray-900'
+              selectedBaby === defaultBabyName ? 'bg-brand-green text-white' : 'text-gray-500 hover:text-gray-900'
             }`}
           >
-            {selectedBaby !== 'Leo' ? selectedBaby : 'Emilia'}
+            {defaultBabyName}
           </button>
           <button 
             onClick={() => setSelectedBaby('Leo')}
@@ -2141,17 +2146,22 @@ function BottomTabBar({ activeTab, setActiveTab, context }: BottomProps) {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           
-          if (context === 'menstrual' && tab.id === 'logger') {
+          if ((context === 'menstrual' || context === 'pregnancy') && tab.id === 'logger') {
+            const isPreg = context === 'pregnancy';
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className="flex flex-col items-center gap-1 min-w-[50px] relative -top-3.5 transition-transform hover:scale-105 active:scale-95 flex-shrink-0"
               >
-                <div className="w-12 h-12 rounded-full bg-[#F03C7A] shadow-md flex items-center justify-center text-white text-2xl font-normal leading-none">
+                <div className={`w-12 h-12 rounded-full shadow-md flex items-center justify-center text-white text-2xl font-normal leading-none ${
+                  isPreg ? 'bg-brand-orange' : 'bg-[#F03C7A]'
+                }`}>
                   <span>+</span>
                 </div>
-                <span className="text-[10px] font-bold text-[#F03C7A] -mt-0.5">
+                <span className={`text-[10px] font-bold -mt-0.5 ${
+                  isPreg ? 'text-brand-orange' : 'text-[#F03C7A]'
+                }`}>
                   {tab.label}
                 </span>
               </button>
@@ -2164,12 +2174,12 @@ function BottomTabBar({ activeTab, setActiveTab, context }: BottomProps) {
               onClick={() => setActiveTab(tab.id)}
               className={`flex flex-col items-center gap-1 min-w-[50px] transition-colors flex-shrink-0 ${
                 isActive 
-                  ? (context === 'menstrual' ? 'text-[#F03C7A]' : 'text-brand-green') 
+                  ? (context === 'menstrual' ? 'text-[#F03C7A]' : context === 'pregnancy' ? 'text-brand-orange' : 'text-brand-green') 
                   : 'text-gray-400 hover:text-gray-600'
               }`}
             >
               <Icon 
-                className={`w-[22px] h-[22px] ${isActive ? (context === 'menstrual' ? 'fill-[#F03C7A]/10' : 'fill-brand-green/10') : ''}`} 
+                className={`w-[22px] h-[22px] ${isActive ? (context === 'menstrual' ? 'fill-[#F03C7A]/10' : context === 'pregnancy' ? 'fill-brand-orange/10' : 'fill-brand-green/10') : ''}`} 
                 strokeWidth={isActive ? 2.5 : 2} 
               />
               <span className={`text-[10px] ${isActive ? 'font-bold' : 'font-semibold'}`}>
