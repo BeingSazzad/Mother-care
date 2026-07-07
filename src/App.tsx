@@ -491,17 +491,11 @@ export default function App() {
                 setUserName={setUserName}
                 userGoal={userGoal}
                 setUserGoal={setUserGoal}
-                cycleLmpDate={cycleLmpDate}
                 setCycleLmpDate={setCycleLmpDate}
-                cycleLength={cycleLength}
                 setCycleLength={setCycleLength}
-                periodDuration={periodDuration}
                 setPeriodDuration={setPeriodDuration}
-                pregnancyDueDate={pregnancyDueDate}
                 setPregnancyDueDate={setPregnancyDueDate}
-                babyName={babyName}
                 setBabyName={setBabyName}
-                babyDob={babyDob}
                 setBabyDob={setBabyDob}
                 babyGender={babyGender}
                 setBabyGender={setBabyGender}
@@ -609,17 +603,11 @@ interface OnboardingProps {
   setUserName: (n: string) => void;
   userGoal: 'menstrual' | 'pregnancy' | 'baby';
   setUserGoal: (g: 'menstrual' | 'pregnancy' | 'baby') => void;
-  cycleLmpDate: string;
   setCycleLmpDate: (d: string) => void;
-  cycleLength: number;
   setCycleLength: (l: number) => void;
-  periodDuration: number;
   setPeriodDuration: (d: number) => void;
-  pregnancyDueDate: string;
   setPregnancyDueDate: (d: string) => void;
-  babyName: string;
   setBabyName: (n: string) => void;
-  babyDob: string;
   setBabyDob: (d: string) => void;
   babyGender: 'Boy' | 'Girl' | 'Surprise';
   setBabyGender: (g: 'Boy' | 'Girl' | 'Surprise') => void;
@@ -631,29 +619,23 @@ function ScreenOnboarding({
   setUserName,
   userGoal,
   setUserGoal,
-  cycleLmpDate,
   setCycleLmpDate,
-  cycleLength,
   setCycleLength,
-  periodDuration,
   setPeriodDuration,
-  pregnancyDueDate,
   setPregnancyDueDate,
-  babyName,
   setBabyName,
-  babyDob,
   setBabyDob,
   babyGender,
   setBabyGender
 }: OnboardingProps) {
   const [step, setStep] = useState(1); // Step 1: Base profile, Step 2: Goal, Step 3: Specific Params
-  const [inputName, setInputName] = useState(userName);
-  const [inputLmp, setInputLmp] = useState(cycleLmpDate);
-  const [inputLen, setInputLen] = useState(cycleLength);
-  const [inputDur, setInputDur] = useState(periodDuration);
-  const [inputDue, setInputDue] = useState(pregnancyDueDate);
-  const [inputBabyName, setInputBabyName] = useState(babyName);
-  const [inputBabyDob, setInputBabyDob] = useState(babyDob);
+  const [inputName, setInputName] = useState(userName === 'Lisa' ? '' : userName);
+  const [inputLmp, setInputLmp] = useState('');
+  const [inputLen, setInputLen] = useState<string>('');
+  const [inputDur, setInputDur] = useState<string>('');
+  const [inputDue, setInputDue] = useState('');
+  const [inputBabyName, setInputBabyName] = useState('');
+  const [inputBabyDob, setInputBabyDob] = useState('');
   const [inputGender, setInputGender] = useState<'Boy' | 'Girl' | 'Surprise'>(babyGender);
 
   const handleNext = () => {
@@ -664,14 +646,24 @@ function ScreenOnboarding({
     } else if (step === 2) {
       setStep(3);
     } else if (step === 3) {
-      // Save all inputs
-      setCycleLmpDate(inputLmp);
-      setCycleLength(inputLen);
-      setPeriodDuration(inputDur);
-      setPregnancyDueDate(inputDue);
-      setBabyName(inputBabyName);
-      setBabyDob(inputBabyDob);
-      setBabyGender(inputGender);
+      if (userGoal === 'menstrual') {
+        if (!inputLmp) return;
+        const parsedLen = Number(inputLen);
+        const parsedDur = Number(inputDur);
+        if (isNaN(parsedLen) || parsedLen < 15 || parsedLen > 50) return;
+        if (isNaN(parsedDur) || parsedDur < 2 || parsedDur > 15) return;
+        setCycleLmpDate(inputLmp);
+        setCycleLength(parsedLen);
+        setPeriodDuration(parsedDur);
+      } else if (userGoal === 'pregnancy') {
+        if (!inputDue) return;
+        setPregnancyDueDate(inputDue);
+      } else if (userGoal === 'baby') {
+        if (!inputBabyName.trim() || !inputBabyDob) return;
+        setBabyName(inputBabyName);
+        setBabyDob(inputBabyDob);
+        setBabyGender(inputGender);
+      }
       onComplete();
     }
   };
@@ -714,7 +706,7 @@ function ScreenOnboarding({
                 type="text"
                 value={inputName}
                 onChange={(e) => setInputName(e.target.value)}
-                placeholder="e.g. Lisa Simpson"
+                placeholder="Enter your name"
                 className="w-full h-11 px-4 bg-white border border-orange-100 rounded-2xl text-xs font-semibold focus:outline-none focus:border-brand-orange shadow-xs"
               />
             </div>
@@ -801,7 +793,8 @@ function ScreenOnboarding({
                     <input
                       type="number"
                       value={inputLen}
-                      onChange={(e) => setInputLen(Number(e.target.value))}
+                      onChange={(e) => setInputLen(e.target.value)}
+                      placeholder="e.g. 28"
                       className="w-full h-10 px-4 bg-white border border-orange-100 rounded-2xl text-xs font-semibold focus:outline-none focus:border-brand-orange shadow-xs"
                     />
                   </div>
@@ -810,7 +803,8 @@ function ScreenOnboarding({
                     <input
                       type="number"
                       value={inputDur}
-                      onChange={(e) => setInputDur(Number(e.target.value))}
+                      onChange={(e) => setInputDur(e.target.value)}
+                      placeholder="e.g. 5"
                       className="w-full h-10 px-4 bg-white border border-orange-100 rounded-2xl text-xs font-semibold focus:outline-none focus:border-brand-orange shadow-xs"
                     />
                   </div>
@@ -841,7 +835,7 @@ function ScreenOnboarding({
                     type="text"
                     value={inputBabyName}
                     onChange={(e) => setInputBabyName(e.target.value)}
-                    placeholder="e.g. Emilia"
+                    placeholder="Enter baby's name or nickname"
                     className="w-full h-10 px-4 bg-white border border-orange-100 rounded-2xl text-xs font-semibold focus:outline-none focus:border-brand-orange shadow-xs"
                   />
                 </div>
@@ -2444,7 +2438,7 @@ function ScreenLogin({
                 required
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                placeholder="lisa@bamudi.com"
+                placeholder="Enter your email address"
                 className="w-full h-11 pl-11 pr-4 bg-white/80 border border-orange-100 rounded-2xl text-xs focus:outline-none focus:border-brand-orange leading-snug shadow-xs"
               />
             </div>
@@ -2461,7 +2455,7 @@ function ScreenLogin({
                 required
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 className="w-full h-11 pl-11 pr-11 bg-white/80 border border-orange-100 rounded-2xl text-xs focus:outline-none focus:border-brand-orange leading-snug shadow-xs"
               />
               <button 
@@ -2636,7 +2630,7 @@ function ScreenSignUp({
                 required
                 value={name}
                 onChange={(e) => { setName(e.target.value); setError(''); }}
-                placeholder="Lisa Simpson"
+                placeholder="Enter your full name"
                 className="w-full h-10 px-4 bg-white/85 border border-orange-100 rounded-2xl text-xs focus:outline-none focus:border-brand-orange leading-snug shadow-xs"
               />
             </div>
@@ -2648,7 +2642,7 @@ function ScreenSignUp({
                 required
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                placeholder="lisa@example.com"
+                placeholder="Enter your email address"
                 className="w-full h-10 px-4 bg-white/85 border border-orange-100 rounded-2xl text-xs focus:outline-none focus:border-brand-orange leading-snug shadow-xs"
               />
             </div>
@@ -2660,7 +2654,7 @@ function ScreenSignUp({
                 required
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                placeholder="Create password"
+                placeholder="Create a strong password"
                 className="w-full h-10 px-4 bg-white/85 border border-orange-100 rounded-2xl text-xs focus:outline-none focus:border-brand-orange leading-snug shadow-xs"
               />
             </div>
@@ -2672,7 +2666,7 @@ function ScreenSignUp({
                 required
                 value={confirmPassword}
                 onChange={(e) => { setConfirmPassword(e.target.value); setError(''); }}
-                placeholder="Confirm password"
+                placeholder="Re-enter your password"
                 className="w-full h-10 px-4 bg-white/85 border border-orange-100 rounded-2xl text-xs focus:outline-none focus:border-brand-orange leading-snug shadow-xs"
               />
             </div>
