@@ -326,6 +326,8 @@ export default function App() {
     'w1': false,
   });
 
+  const [selectedArticle, setSelectedArticle] = useState<number | null>(null);
+
   const toggleMilestone = (id: string) => {
     setCheckedMilestones(prev => ({ ...prev, [id]: !prev[id] }));
   };
@@ -592,7 +594,21 @@ export default function App() {
                   <ScreenChecklists onNavigate={navigateTo} activeMode={activeMode} englishChecklist={englishChecklist} toggleEnglishChecklist={toggleEnglishChecklist} />
                 )}
                 {activeScreen === 'ratgeber' && (
-                  <ScreenRatgeber onNavigate={navigateTo} activeMode={activeMode} />
+                  <ScreenRatgeber 
+                    onNavigate={navigateTo} 
+                    activeMode={activeMode} 
+                    onSelectArticle={(idx) => {
+                      setSelectedArticle(idx);
+                      setActiveScreen('article-details');
+                    }}
+                  />
+                )}
+                {activeScreen === 'article-details' && (
+                  <ScreenArticleDetails 
+                    onNavigate={navigateTo} 
+                    articleIdx={selectedArticle ?? 0}
+                    activeMode={activeMode}
+                  />
                 )}
                 {activeScreen === 'profile' && (
                   activeMode === 'menstrual' ? (
@@ -618,7 +634,7 @@ export default function App() {
 
           {/* Context-aware Bottom Tab bar */}
           {isLoggedIn && hasCompletedOnboarding && (
-            <BottomTabBar activeTab={activeScreen} setActiveTab={navigateTo} context={activeMode} />
+            <BottomTabBar activeTab={activeScreen === 'article-details' ? 'ratgeber' : activeScreen} setActiveTab={navigateTo} context={activeMode} />
           )}
           
           {/* iOS Bottom Indicator bar */}
@@ -1867,6 +1883,37 @@ function ScreenChecklists({ onNavigate, activeMode, englishChecklist, toggleEngl
   const currentList = checklistItems[activeTab as keyof typeof checklistItems];
   const checkedCount = currentList.filter(item => englishChecklist[item.id]).length;
 
+  const getTabStyle = (tabId: string) => {
+    const isActive = activeTab === tabId;
+    if (isActive) {
+      if (activeMode === 'pregnancy') return 'bg-brand-orange text-white shadow-xs';
+      if (activeMode === 'menstrual') return 'bg-[#F03C7A] text-white shadow-xs';
+      return 'bg-brand-green text-white shadow-xs';
+    }
+    return 'text-gray-600 hover:text-gray-900';
+  };
+
+  const getProgressColor = () => {
+    if (activeMode === 'pregnancy') return 'bg-brand-orange';
+    if (activeMode === 'menstrual') return 'bg-[#F03C7A]';
+    return 'bg-brand-green';
+  };
+
+  const getCheckboxStyle = (isChecked: boolean) => {
+    if (isChecked) {
+      if (activeMode === 'pregnancy') return 'bg-brand-orange border-brand-orange text-white';
+      if (activeMode === 'menstrual') return 'bg-[#F03C7A] border-[#F03C7A] text-white';
+      return 'bg-brand-green border-brand-green text-white';
+    }
+    return 'border-gray-300';
+  };
+
+  const getHoverBorder = () => {
+    if (activeMode === 'pregnancy') return 'hover:border-brand-orange/20';
+    if (activeMode === 'menstrual') return 'hover:border-[#F03C7A]/20';
+    return 'hover:border-brand-green/20';
+  };
+
   return (
     <div className="p-6 pt-3 animate-fade-in">
       {/* Header */}
@@ -1883,25 +1930,19 @@ function ScreenChecklists({ onNavigate, activeMode, englishChecklist, toggleEngl
       <div className="flex bg-brand-cream border border-brand-beige p-1.5 rounded-full mb-6">
         <button 
           onClick={() => setActiveTab('hospital')}
-          className={`flex-1 py-2 text-[12px] font-bold rounded-full transition-all ${
-            activeTab === 'hospital' ? 'bg-brand-green text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'
-          }`}
+          className={`flex-1 py-2 text-[12px] font-bold rounded-full transition-all ${getTabStyle('hospital')}`}
         >
           Hospital Bag
         </button>
         <button 
           onClick={() => setActiveTab('essentials')}
-          className={`flex-1 py-2 text-[12px] font-bold rounded-full transition-all ${
-            activeTab === 'essentials' ? 'bg-brand-green text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'
-          }`}
+          className={`flex-1 py-2 text-[12px] font-bold rounded-full transition-all ${getTabStyle('essentials')}`}
         >
           Essentials
         </button>
         <button 
           onClick={() => setActiveTab('postpartum')}
-          className={`flex-1 py-2 text-[12px] font-bold rounded-full transition-all ${
-            activeTab === 'postpartum' ? 'bg-brand-green text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'
-          }`}
+          className={`flex-1 py-2 text-[12px] font-bold rounded-full transition-all ${getTabStyle('postpartum')}`}
         >
           Postpartum
         </button>
@@ -1914,7 +1955,7 @@ function ScreenChecklists({ onNavigate, activeMode, englishChecklist, toggleEngl
           <span>{checkedCount} of {currentList.length}</span>
         </div>
         <div className="w-full h-2.5 bg-brand-cream rounded-full overflow-hidden">
-          <div className="h-full bg-brand-green rounded-full transition-all duration-300" style={{ width: `${currentList.length ? (checkedCount / currentList.length) * 100 : 0}%` }}></div>
+          <div className={`h-full rounded-full transition-all duration-300 ${getProgressColor()}`} style={{ width: `${currentList.length ? (checkedCount / currentList.length) * 100 : 0}%` }}></div>
         </div>
       </div>
 
@@ -1926,11 +1967,9 @@ function ScreenChecklists({ onNavigate, activeMode, englishChecklist, toggleEngl
             <div 
               key={item.id}
               onClick={() => toggleEnglishChecklist(item.id)}
-              className="flex items-center gap-3.5 p-4 bg-white border border-brand-beige rounded-2xl cursor-pointer hover:border-brand-green/20 transition"
+              className={`flex items-center gap-3.5 p-4 bg-white border border-brand-beige rounded-2xl cursor-pointer transition ${getHoverBorder()}`}
             >
-              <div className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 ${
-                isChecked ? 'bg-brand-green border-brand-green text-white' : 'border-gray-300'
-              }`}>
+              <div className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-all ${getCheckboxStyle(isChecked)}`}>
                 {isChecked && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
               </div>
               <span className={`text-[13px] font-semibold text-gray-800 ${isChecked ? 'line-through opacity-55' : ''}`}>{item.name}</span>
@@ -1945,7 +1984,7 @@ function ScreenChecklists({ onNavigate, activeMode, englishChecklist, toggleEngl
 // -------------------------------------------------------------
 // SCREEN 8: GUIDES DIRECTORY
 // -------------------------------------------------------------
-function ScreenRatgeber({ onNavigate, activeMode }: { onNavigate: (s: string) => void; activeMode: 'menstrual' | 'pregnancy' | 'baby' }) {
+function ScreenRatgeber({ onNavigate, activeMode, onSelectArticle }: { onNavigate: (s: string) => void; activeMode: 'menstrual' | 'pregnancy' | 'baby'; onSelectArticle: (idx: number) => void }) {
   const articles = [
     {
       title: 'Physical Changes During Pregnancy',
@@ -1961,6 +2000,14 @@ function ScreenRatgeber({ onNavigate, activeMode }: { onNavigate: (s: string) =>
     }
   ];
 
+  const getThemeStyles = () => {
+    if (activeMode === 'pregnancy') return { text: 'text-brand-orange', borderHover: 'hover:border-brand-orange/30' };
+    if (activeMode === 'menstrual') return { text: 'text-[#F03C7A]', borderHover: 'hover:border-[#F03C7A]/30' };
+    return { text: 'text-brand-green', borderHover: 'hover:border-brand-green/30' };
+  };
+
+  const styles = getThemeStyles();
+
   return (
     <div className="p-6 pt-3 animate-fade-in">
       <div className="flex justify-between items-center mb-6">
@@ -1973,22 +2020,144 @@ function ScreenRatgeber({ onNavigate, activeMode }: { onNavigate: (s: string) =>
       </div>
 
       <div className="space-y-4">
-        {articles.map((art, idx) => (
-          <div key={idx} className="bg-white rounded-2xl border border-brand-beige shadow-2xs overflow-hidden flex flex-col hover:border-brand-green/20 transition">
-            <div className="p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2.5 py-0.5 bg-brand-lightgreen text-brand-green rounded text-[10px] font-bold uppercase tracking-wider">{art.cat}</span>
-                <span className="text-[10px] text-gray-400 font-semibold">{art.readTime}</span>
+        {articles.map((art, idx) => {
+          const isPregnancyCat = art.cat === 'Pregnancy';
+          const badgeClass = isPregnancyCat
+            ? 'bg-orange-50 text-brand-orange border border-orange-100/60'
+            : 'bg-emerald-50 text-brand-green border border-emerald-100/60';
+          
+          return (
+            <div 
+              key={idx} 
+              onClick={() => onSelectArticle(idx)}
+              className={`bg-white rounded-2xl border border-brand-beige shadow-2xs overflow-hidden flex flex-col transition cursor-pointer ${styles.borderHover}`}
+            >
+              <div className="p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badgeClass}`}>{art.cat}</span>
+                  <span className="text-[10px] text-gray-400 font-semibold">{art.readTime}</span>
+                </div>
+                <h4 className="text-[14px] font-bold text-brand-brown mb-1.5 leading-snug">{art.title}</h4>
+                <p className="text-[12px] text-gray-500 leading-snug">{art.desc}</p>
               </div>
-              <h4 className="text-[14px] font-bold text-brand-brown mb-1.5 leading-snug">{art.title}</h4>
-              <p className="text-[12px] text-gray-500 leading-snug">{art.desc}</p>
+              <div className="px-5 py-3 bg-brand-cream border-t border-brand-beige flex items-center justify-between">
+                <span className={`text-[11px] font-bold ${styles.text}`}>Read now</span>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </div>
             </div>
-            <div className="px-5 py-3 bg-brand-cream border-t border-brand-beige flex items-center justify-between cursor-pointer">
-              <span className="text-[11px] font-bold text-brand-green">Read now</span>
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// SCREEN 8B: ARTICLE DETAILS VIEW
+// -------------------------------------------------------------
+function ScreenArticleDetails({ onNavigate, articleIdx, activeMode }: { onNavigate: (s: string) => void; articleIdx: number; activeMode: 'menstrual' | 'pregnancy' | 'baby' }) {
+  const articles = [
+    {
+      title: 'Physical Changes During Pregnancy',
+      cat: 'Pregnancy',
+      readTime: '6 min read',
+      introduction: 'Pregnancy is a journey of incredible transformation. As your baby develops, your body goes through major changes week by week. Understanding what happens can help you feel more connected and prepared.',
+      sections: [
+        {
+          title: 'First Trimester (Weeks 1 - 13)',
+          content: 'This phase is marked by rapid hormonal surges. It is common to experience fatigue, morning sickness, tender breasts, and frequent urination. Even if you do not look pregnant yet, your body is working overtime to lay the foundation for your baby.'
+        },
+        {
+          title: 'Second Trimester (Weeks 14 - 27)',
+          content: 'Often referred to as the "golden trimester". Many mothers find that morning sickness begins to fade, energy levels return, and the baby bump becomes beautifully visible. This is also when you will start feeling the first gentle movements (flutters).'
+        },
+        {
+          title: 'Third Trimester (Weeks 28 - 40)',
+          content: 'As your baby grows, physical space becomes tighter. You might feel backaches, shortness of breath, or difficulty sleeping. Focus on resting, stretching, and doing nesting preparations like finalizing your hospital bag.'
+        }
+      ]
+    },
+    {
+      title: 'Postpartum Recovery: Healing, Rest, and Time for Yourself',
+      cat: 'Postpartum',
+      readTime: '5 min read',
+      introduction: 'Giving birth is a monumental event. While much of your attention now shifts to your newborn, caring for yourself is just as important. Postpartum healing takes time, patience, and gentle self-love.',
+      sections: [
+        {
+          title: 'Physical Recovery',
+          content: 'Whether you had a vaginal birth or a C-section, your body needs weeks to heal. Rest as much as possible, keep hydrated, and do gentle pelvic floor exercises only when cleared by your midwife or doctor.'
+        },
+        {
+          title: 'Emotional Well-being',
+          content: 'A few days after birth, dropping hormones can trigger the "baby blues". You might feel weepiness, mood swings, or anxiety. This is normal. If these feelings persist beyond two weeks, speak with your healthcare provider.'
+        },
+        {
+          title: 'Nourishment & Rest',
+          content: 'The golden rule of early postpartum is: "Sleep when the baby sleeps". Eat warm, nutrient-dense foods (like soups, stews, and oatmeal) to restore energy and support healing or lactation.'
+        }
+      ]
+    }
+  ];
+
+  const art = articles[articleIdx] || articles[0];
+
+  const getThemeStyles = () => {
+    if (activeMode === 'pregnancy') return { text: 'text-brand-orange', bg: 'bg-brand-orange', lightBg: 'bg-orange-50' };
+    if (activeMode === 'menstrual') return { text: 'text-[#F03C7A]', bg: 'bg-[#F03C7A]', lightBg: 'bg-rose-50' };
+    return { text: 'text-brand-green', bg: 'bg-brand-green', lightBg: 'bg-emerald-50' };
+  };
+
+  const styles = getThemeStyles();
+
+  return (
+    <div className="p-6 pt-3 animate-fade-in space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-2">
+        <ArrowLeft className="w-6 h-6 text-brand-brown cursor-pointer" onClick={() => onNavigate('ratgeber')} />
+        <span className="font-bold text-[13px] text-gray-500 uppercase tracking-widest">Article Details</span>
+        <div className="w-6 h-6"></div>
+      </div>
+
+      {/* Hero Section */}
+      <div className={`${styles.lightBg} p-6 rounded-[32px] border border-brand-beige shadow-2xs`}>
+        <div className="flex items-center gap-2 mb-3">
+          <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white ${styles.text} border border-brand-beige`}>
+            {art.cat}
+          </span>
+          <span className="text-[10px] text-gray-500 font-semibold">{art.readTime}</span>
+        </div>
+        <h3 className="text-xl font-black text-brand-brown leading-tight mb-2">
+          {art.title}
+        </h3>
+        <p className="text-[13px] text-gray-600 leading-relaxed font-medium">
+          {art.introduction}
+        </p>
+      </div>
+
+      {/* Body Content */}
+      <div className="space-y-5 pl-1">
+        {art.sections.map((sec, i) => (
+          <div key={i} className="space-y-1.5">
+            <h4 className="text-[14px] font-black text-brand-brown flex items-center gap-2">
+              <span className={`w-1.5 h-4 rounded-full ${styles.bg}`}></span>
+              {sec.title}
+            </h4>
+            <p className="text-[13px] text-gray-600 leading-relaxed">
+              {sec.content}
+            </p>
           </div>
         ))}
+      </div>
+
+      {/* Bottom Health Advice Card */}
+      <div className="bg-white border border-brand-beige p-5 rounded-3xl shadow-3xs">
+        <div className="flex items-center gap-2.5 mb-2">
+          <span className="text-xl">🩺</span>
+          <h4 className="text-[13px] font-extrabold text-brand-brown uppercase tracking-wider">Health Reminder</h4>
+        </div>
+        <p className="text-[12px] text-gray-500 leading-normal">
+          This article is for informational purposes only and does not replace professional medical advice. Always consult your doctor or obstetrician regarding any medical concerns.
+        </p>
       </div>
     </div>
   );
@@ -2022,6 +2191,22 @@ function ScreenProfile({
 
   const defaultBabyName = babyName || 'Emilia';
 
+  const getToggleStyle = (babyId: string) => {
+    const isSelected = selectedBaby === babyId;
+    if (isSelected) {
+      if (activeMode === 'pregnancy') return 'bg-brand-orange text-white shadow-xs';
+      if (activeMode === 'menstrual') return 'bg-[#F03C7A] text-white shadow-xs';
+      return 'bg-brand-green text-white shadow-xs';
+    }
+    return 'text-gray-500 hover:text-gray-900';
+  };
+
+  const getButtonStyle = () => {
+    if (activeMode === 'pregnancy') return 'border-brand-orange/20 hover:bg-brand-lightorange text-brand-orange';
+    if (activeMode === 'menstrual') return 'border-[#F03C7A]/20 hover:bg-[#FFF5F8] text-[#F03C7A]';
+    return 'border-brand-green/20 hover:bg-brand-lightgreen text-brand-green';
+  };
+
   return (
     <div className="p-6 pt-3 animate-fade-in">
       <div className="flex justify-between items-center mb-6">
@@ -2044,17 +2229,13 @@ function ScreenProfile({
         <div className="flex gap-2 bg-brand-cream border border-brand-beige p-1 rounded-xl">
           <button 
             onClick={() => setSelectedBaby(defaultBabyName)}
-            className={`px-3 py-1 text-[11px] font-bold rounded-lg transition ${
-              selectedBaby === defaultBabyName ? 'bg-brand-green text-white' : 'text-gray-500 hover:text-gray-900'
-            }`}
+            className={`px-3 py-1 text-[11px] font-bold rounded-lg transition ${getToggleStyle(defaultBabyName)}`}
           >
             {defaultBabyName}
           </button>
           <button 
             onClick={() => setSelectedBaby('Leo')}
-            className={`px-3 py-1 text-[11px] font-bold rounded-lg transition ${
-              selectedBaby === 'Leo' ? 'bg-brand-green text-white' : 'text-gray-500 hover:text-gray-900'
-            }`}
+            className={`px-3 py-1 text-[11px] font-bold rounded-lg transition ${getToggleStyle('Leo')}`}
           >
             Leo
           </button>
@@ -2091,7 +2272,7 @@ function ScreenProfile({
 
       <button 
         onClick={() => onNavigate('switcher')}
-        className="w-full h-[48px] border-2 border-brand-orange/20 hover:bg-brand-lightorange active:scale-98 transition text-brand-orange rounded-2xl text-[16px] font-bold flex items-center justify-center gap-2"
+        className={`w-full h-[48px] border-2 active:scale-98 transition rounded-2xl text-[16px] font-bold flex items-center justify-center gap-2 ${getButtonStyle()}`}
       >
         <span>Switch tracker modes</span>
       </button>
