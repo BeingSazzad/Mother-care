@@ -109,6 +109,187 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authView, setAuthView] = useState<'login' | 'signup' | 'forgot'>('login');
   
+  // Onboarding States
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [userName, setUserName] = useState('Lisa');
+  const [userGoal, setUserGoal] = useState<'menstrual' | 'pregnancy' | 'baby'>('menstrual');
+
+  // Onboarding Settings configurations
+  const [cycleLmpDate, setCycleLmpDate] = useState('2026-06-30');
+  const [cycleLength, setCycleLength] = useState(28);
+  const [periodDuration, setPeriodDuration] = useState(5);
+
+  const [pregnancyDueDate, setPregnancyDueDate] = useState('2026-12-15');
+
+  const [babyName, setBabyName] = useState('Emilia');
+  const [babyDob, setBabyDob] = useState('2026-04-15');
+  const [babyGender, setBabyGender] = useState<'Boy' | 'Girl' | 'Surprise'>('Girl');
+
+  // Dynamic Calculators
+  const calculateCycleInfo = () => {
+    const lmp = new Date(cycleLmpDate);
+    const today = new Date();
+    // Normalize dates to eliminate time differences
+    today.setHours(0, 0, 0, 0);
+    lmp.setHours(0, 0, 0, 0);
+    
+    const diffTime = today.getTime() - lmp.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Cycle day is 1-indexed relative to the cycle length
+    let cycleDay = 1;
+    if (diffDays >= 0) {
+      cycleDay = (diffDays % cycleLength) + 1;
+    } else {
+      // Handles past start dates logically
+      cycleDay = cycleLength - (Math.abs(diffDays) % cycleLength) + 1;
+      if (cycleDay > cycleLength) cycleDay = 1;
+    }
+    
+    const isMenstruating = cycleDay <= periodDuration;
+    const daysRemainingInPeriod = isMenstruating ? periodDuration - cycleDay + 1 : 0;
+    
+    const ovulationDay = cycleLength - 14; 
+    const isFertile = cycleDay >= (ovulationDay - 3) && cycleDay <= (ovulationDay + 2);
+    const isOvulationDay = cycleDay === ovulationDay;
+    
+    let phase = 'Follicular Phase';
+    if (isMenstruating) phase = 'Menstruation';
+    else if (isOvulationDay) phase = 'Ovulation';
+    else if (isFertile) phase = 'Fertile Window';
+    else if (cycleDay > ovulationDay) phase = 'Luteal Phase';
+    
+    return {
+      cycleDay,
+      phase,
+      isMenstruating,
+      daysRemainingInPeriod,
+      isFertile,
+      ovulationDay
+    };
+  };
+
+  const calculatePregnancyInfo = () => {
+    const due = new Date(pregnancyDueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+    
+    // LMP = Due Date - 280 days
+    const lmp = new Date(due.getTime() - (280 * 24 * 60 * 60 * 1000));
+    
+    const diffTime = today.getTime() - lmp.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    const gestationWeek = Math.max(1, Math.min(40, Math.floor(diffDays / 7) + 1));
+    const remainingDays = Math.max(0, Math.floor((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+    
+    let fruit = 'Lemon';
+    let sizeDesc = 'Baby is about 8.5 cm long and weighs around 43 grams.';
+    let extraDesc = 'Fingerprints are starting to form!';
+    
+    if (gestationWeek <= 7) {
+      fruit = 'Poppy Seed';
+      sizeDesc = 'Baby is about 0.1 cm long and weighs under 1 gram.';
+      extraDesc = 'Major organs are starting to form!';
+    } else if (gestationWeek <= 11) {
+      fruit = 'Raspberry';
+      sizeDesc = 'Baby is about 1.6 cm long and weighs around 1 gram.';
+      extraDesc = 'Baby is starting to wiggle their tiny limbs!';
+    } else if (gestationWeek <= 15) {
+      fruit = '🍋 Lemon';
+      sizeDesc = 'Baby is about 8.5 cm long and weighs around 43 grams.';
+      extraDesc = 'Fingerprints are starting to form!';
+    } else if (gestationWeek <= 19) {
+      fruit = '🥑 Avocado';
+      sizeDesc = 'Baby is about 12 cm long and weighs around 150 grams.';
+      extraDesc = 'Baby can now hear your heartbeat and voice!';
+    } else if (gestationWeek <= 23) {
+      fruit = '🍌 Banana';
+      sizeDesc = 'Baby is about 26 cm long and weighs around 360 grams.';
+      extraDesc = 'Baby is developing their sleep-wake cycles!';
+    } else if (gestationWeek <= 27) {
+      fruit = '🥦 Cauliflower';
+      sizeDesc = 'Baby is about 36 cm long and weighs around 900 grams.';
+      extraDesc = 'Baby is now opening and closing their eyes!';
+    } else if (gestationWeek <= 31) {
+      fruit = '🍆 Eggplant';
+      sizeDesc = 'Baby is about 40 cm long and weighs around 1.5 kilograms.';
+      extraDesc = 'Baby is gaining body fat and growing fast!';
+    } else if (gestationWeek <= 35) {
+      fruit = '🍈 Melon';
+      sizeDesc = 'Baby is about 45 cm long and weighs around 2.2 kilograms.';
+      extraDesc = 'Baby is getting snug in your womb!';
+    } else {
+      fruit = '🍉 Watermelon';
+      sizeDesc = 'Baby is about 50 cm long and weighs around 3.2 kilograms.';
+      extraDesc = 'Baby is fully developed and ready to meet you!';
+    }
+    
+    let trimester = '1st Trimester';
+    if (gestationWeek > 27) trimester = '3rd Trimester';
+    else if (gestationWeek > 13) trimester = '2nd Trimester';
+    
+    return {
+      gestationWeek,
+      remainingDays,
+      trimester,
+      fruit,
+      sizeDesc,
+      extraDesc,
+      dueDateString: due.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    };
+  };
+
+  const calculateBabyInfo = () => {
+    const dob = new Date(babyDob);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    dob.setHours(0, 0, 0, 0);
+    
+    const diffTime = today.getTime() - dob.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    const months = Math.max(0, Math.floor(diffDays / 30.4));
+    const weeks = Math.max(0, Math.floor((diffDays % 30.4) / 7));
+    
+    let phase = 'Phase 1: 0 - 3 Months';
+    let phaseTitle = 'Getting to know the world';
+    let phaseDescription = 'Gentle observations — these are not a test. Every child develops at their own pace.';
+    if (months >= 18) {
+      phase = 'Phase 6: 18 - 24 Months';
+      phaseTitle = 'The Little Explorer';
+      phaseDescription = 'Active movement and simple sentences. Child is discovering independence.';
+    } else if (months >= 12) {
+      phase = 'Phase 5: 12 - 18 Months';
+      phaseTitle = 'First Steps & Words';
+      phaseDescription = 'Walking and first spoken words. Curiosity is at an all-time high.';
+    } else if (months >= 9) {
+      phase = 'Phase 4: 9 - 12 Months';
+      phaseTitle = 'Standing & Understanding';
+      phaseDescription = 'Pulling up to stand and responding to simple requests.';
+    } else if (months >= 6) {
+      phase = 'Phase 3: 6 - 9 Months';
+      phaseTitle = 'Sitting & Babbling';
+      phaseDescription = 'Sitting independently and starting to eat solid foods.';
+    } else if (months >= 3) {
+      phase = 'Phase 2: 3 - 6 Months';
+      phaseTitle = 'Smiling & Reaching';
+      phaseDescription = 'Reaching for toys and rolling over. Gaining head control.';
+    }
+    
+    return {
+      months,
+      weeks,
+      phase,
+      phaseTitle,
+      phaseDescription,
+      ageString: months === 0 && weeks === 0 
+        ? 'Newborn' 
+        : `${months} Month${months !== 1 ? 's' : ''}, ${weeks} Week${weeks !== 1 ? 's' : ''} old`
+    };
+  };
+
   const [activeScreen, setActiveScreen] = useState('switcher'); // switcher, menstrual, logger, calendar, analytics, pregnancy, dashboard, milestones, ratgeber, checklists, profile
   const [selectedBaby, setSelectedBaby] = useState('Emilia');
   const [activeMode, setActiveMode] = useState<'menstrual' | 'pregnancy' | 'baby'>('menstrual');
@@ -263,22 +444,89 @@ export default function App() {
             {!isLoggedIn ? (
               <>
                 {authView === 'login' && (
-                  <ScreenLogin onLogin={() => setIsLoggedIn(true)} onNavigateAuth={setAuthView} />
+                  <ScreenLogin 
+                    onLogin={() => {
+                      setIsLoggedIn(true);
+                      setHasCompletedOnboarding(false); // Reset onboarding on normal login
+                    }} 
+                    onNavigateAuth={setAuthView} 
+                    onQuickDemoLogin={() => {
+                      setIsLoggedIn(true);
+                      setHasCompletedOnboarding(true); // Bypass onboarding for quick demo
+                      // Seed defaults matching original Lisa demo
+                      setUserName('Lisa');
+                      setCycleLmpDate('2026-06-30');
+                      setCycleLength(28);
+                      setPeriodDuration(5);
+                      setPregnancyDueDate('2026-12-15');
+                      setBabyName('Emilia');
+                      setSelectedBaby('Emilia');
+                      setBabyDob('2026-04-15');
+                      navigateTo('switcher');
+                    }}
+                  />
                 )}
                 {authView === 'signup' && (
-                  <ScreenSignUp onNavigateAuth={setAuthView} />
+                  <ScreenSignUp 
+                    onNavigateAuth={setAuthView} 
+                    onRegister={(registeredName) => {
+                      setUserName(registeredName);
+                      setIsLoggedIn(true);
+                      setHasCompletedOnboarding(false); // Begin onboarding setup
+                    }}
+                  />
                 )}
                 {authView === 'forgot' && (
                   <ScreenForgotPassword onNavigateAuth={setAuthView} />
                 )}
               </>
+            ) : !hasCompletedOnboarding ? (
+              <ScreenOnboarding
+                onComplete={() => {
+                  setHasCompletedOnboarding(true);
+                  setSelectedBaby(babyName); // sync selected baby state
+                  navigateTo(userGoal === 'menstrual' ? 'menstrual' : userGoal === 'pregnancy' ? 'pregnancy' : 'dashboard');
+                }}
+                userName={userName}
+                setUserName={setUserName}
+                userGoal={userGoal}
+                setUserGoal={setUserGoal}
+                cycleLmpDate={cycleLmpDate}
+                setCycleLmpDate={setCycleLmpDate}
+                cycleLength={cycleLength}
+                setCycleLength={setCycleLength}
+                periodDuration={periodDuration}
+                setPeriodDuration={setPeriodDuration}
+                pregnancyDueDate={pregnancyDueDate}
+                setPregnancyDueDate={setPregnancyDueDate}
+                babyName={babyName}
+                setBabyName={setBabyName}
+                babyDob={babyDob}
+                setBabyDob={setBabyDob}
+                babyGender={babyGender}
+                setBabyGender={setBabyGender}
+              />
             ) : (
               <>
                 {activeScreen === 'switcher' && (
-                  <ScreenSwitcher onNavigate={navigateTo} selectedBaby={selectedBaby} />
+                  <ScreenSwitcher 
+                    onNavigate={navigateTo} 
+                    userName={userName}
+                    selectedBaby={selectedBaby} 
+                    cycleInfo={calculateCycleInfo()}
+                    pregnancyInfo={calculatePregnancyInfo()}
+                    babyInfo={calculateBabyInfo()}
+                  />
                 )}
                 {activeScreen === 'menstrual' && (
-                  <ScreenMenstrual onNavigate={navigateTo} />
+                  <ScreenMenstrual 
+                    onNavigate={navigateTo} 
+                    userName={userName}
+                    cycleLmpDate={cycleLmpDate}
+                    cycleLength={cycleLength}
+                    periodDuration={periodDuration}
+                    cycleInfo={calculateCycleInfo()}
+                  />
                 )}
                 {activeScreen === 'calendar' && (
                   <ScreenCalendar onNavigate={navigateTo} />
@@ -300,10 +548,17 @@ export default function App() {
                   <ScreenAnalytics onNavigate={navigateTo} />
                 )}
                 {activeScreen === 'pregnancy' && (
-                  <ScreenPregnancy onNavigate={navigateTo} />
+                  <ScreenPregnancy 
+                    onNavigate={navigateTo} 
+                    pregnancyInfo={calculatePregnancyInfo()}
+                  />
                 )}
                 {activeScreen === 'dashboard' && (
-                  <ScreenDashboard onNavigate={navigateTo} selectedBaby={selectedBaby} />
+                  <ScreenDashboard 
+                    onNavigate={navigateTo} 
+                    selectedBaby={selectedBaby} 
+                    babyInfo={calculateBabyInfo()}
+                  />
                 )}
                 {activeScreen === 'milestones' && (
                   <ScreenMilestones onNavigate={navigateTo} checkedMilestones={checkedMilestones} toggleMilestone={toggleMilestone} />
@@ -323,6 +578,7 @@ export default function App() {
                       activeMode={activeMode} 
                       selectedBaby={selectedBaby} 
                       setSelectedBaby={setSelectedBaby} 
+                      babyInfo={calculateBabyInfo()}
                       onLogOut={() => {
                         setIsLoggedIn(false);
                         setAuthView('login');
@@ -335,7 +591,7 @@ export default function App() {
           </div>
 
           {/* Context-aware Bottom Tab bar */}
-          {isLoggedIn && (
+          {isLoggedIn && hasCompletedOnboarding && (
             <BottomTabBar activeTab={activeScreen} setActiveTab={navigateTo} context={activeMode} />
           )}
           
@@ -347,10 +603,312 @@ export default function App() {
   );
 }
 
+interface OnboardingProps {
+  onComplete: () => void;
+  userName: string;
+  setUserName: (n: string) => void;
+  userGoal: 'menstrual' | 'pregnancy' | 'baby';
+  setUserGoal: (g: 'menstrual' | 'pregnancy' | 'baby') => void;
+  cycleLmpDate: string;
+  setCycleLmpDate: (d: string) => void;
+  cycleLength: number;
+  setCycleLength: (l: number) => void;
+  periodDuration: number;
+  setPeriodDuration: (d: number) => void;
+  pregnancyDueDate: string;
+  setPregnancyDueDate: (d: string) => void;
+  babyName: string;
+  setBabyName: (n: string) => void;
+  babyDob: string;
+  setBabyDob: (d: string) => void;
+  babyGender: 'Boy' | 'Girl' | 'Surprise';
+  setBabyGender: (g: 'Boy' | 'Girl' | 'Surprise') => void;
+}
+
+function ScreenOnboarding({
+  onComplete,
+  userName,
+  setUserName,
+  userGoal,
+  setUserGoal,
+  cycleLmpDate,
+  setCycleLmpDate,
+  cycleLength,
+  setCycleLength,
+  periodDuration,
+  setPeriodDuration,
+  pregnancyDueDate,
+  setPregnancyDueDate,
+  babyName,
+  setBabyName,
+  babyDob,
+  setBabyDob,
+  babyGender,
+  setBabyGender
+}: OnboardingProps) {
+  const [step, setStep] = useState(1); // Step 1: Base profile, Step 2: Goal, Step 3: Specific Params
+  const [inputName, setInputName] = useState(userName);
+  const [inputLmp, setInputLmp] = useState(cycleLmpDate);
+  const [inputLen, setInputLen] = useState(cycleLength);
+  const [inputDur, setInputDur] = useState(periodDuration);
+  const [inputDue, setInputDue] = useState(pregnancyDueDate);
+  const [inputBabyName, setInputBabyName] = useState(babyName);
+  const [inputBabyDob, setInputBabyDob] = useState(babyDob);
+  const [inputGender, setInputGender] = useState<'Boy' | 'Girl' | 'Surprise'>(babyGender);
+
+  const handleNext = () => {
+    if (step === 1) {
+      if (!inputName.trim()) return;
+      setUserName(inputName);
+      setStep(2);
+    } else if (step === 2) {
+      setStep(3);
+    } else if (step === 3) {
+      // Save all inputs
+      setCycleLmpDate(inputLmp);
+      setCycleLength(inputLen);
+      setPeriodDuration(inputDur);
+      setPregnancyDueDate(inputDue);
+      setBabyName(inputBabyName);
+      setBabyDob(inputBabyDob);
+      setBabyGender(inputGender);
+      onComplete();
+    }
+  };
+
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
+  };
+
+  return (
+    <div className="p-6 pt-4 animate-fade-in flex flex-col justify-between min-h-full text-gray-900 bg-gradient-to-b from-[#FFFDFB] via-[#FFF0E6] to-[#FDE2EC]">
+      <div className="flex-grow flex flex-col justify-center">
+        {/* Step indicator */}
+        <div className="flex justify-between items-center mb-6">
+          {step > 1 ? (
+            <button onClick={handleBack} className="flex items-center gap-1 text-brand-brown font-bold text-xs">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back</span>
+            </button>
+          ) : (
+            <div className="w-4 h-4"></div>
+          )}
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Step {step} of 3</span>
+          <div className="w-4 h-4"></div>
+        </div>
+
+        {/* Form content */}
+        {step === 1 && (
+          <div className="space-y-4">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-white border border-brand-beige rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xs">
+                <MammothLogo className="w-10 h-10" />
+              </div>
+              <h2 className="text-[20px] font-extrabold text-brand-brown leading-tight">Welcome to BAMUDI</h2>
+              <p className="text-[12px] text-gray-500 font-semibold mt-1">Let's set up your profile properly.</p>
+            </div>
+            
+            <div>
+              <label className="text-[11px] font-bold text-brand-brown uppercase tracking-wider pl-0.5 block mb-1.5">What should we call you?</label>
+              <input
+                type="text"
+                value={inputName}
+                onChange={(e) => setInputName(e.target.value)}
+                placeholder="e.g. Lisa Simpson"
+                className="w-full h-11 px-4 bg-white border border-orange-100 rounded-2xl text-xs font-semibold focus:outline-none focus:border-brand-orange shadow-xs"
+              />
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-4">
+            <div className="text-center mb-6">
+              <h2 className="text-[20px] font-extrabold text-brand-brown leading-tight">Choose Your Track</h2>
+              <p className="text-[12px] text-gray-500 font-semibold mt-1">Select your current stage to customize the app.</p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => setUserGoal('menstrual')}
+                className={`w-full p-4 rounded-3xl border text-left flex items-center justify-between transition-all duration-300 ${
+                  userGoal === 'menstrual'
+                    ? 'bg-brand-lightorange border-brand-orange shadow-xs'
+                    : 'bg-white border-brand-beige hover:border-brand-orange/30'
+                }`}
+              >
+                <div>
+                  <h3 className="text-sm font-bold text-brand-brown">Cycle Tracker</h3>
+                  <p className="text-[11px] text-gray-500 font-semibold mt-0.5">Track period, ovulation, and fertility</p>
+                </div>
+                <span className="text-2xl">🩸</span>
+              </button>
+
+              <button
+                onClick={() => setUserGoal('pregnancy')}
+                className={`w-full p-4 rounded-3xl border text-left flex items-center justify-between transition-all duration-300 ${
+                  userGoal === 'pregnancy'
+                    ? 'bg-brand-lightbrown border-brand-brown/75 shadow-xs'
+                    : 'bg-white border-brand-beige hover:border-brand-brown/30'
+                }`}
+              >
+                <div>
+                  <h3 className="text-sm font-bold text-brand-brown">Pregnancy Companion</h3>
+                  <p className="text-[11px] text-gray-500 font-semibold mt-0.5">Track gestation weeks and baby size</p>
+                </div>
+                <span className="text-2xl">🤰</span>
+              </button>
+
+              <button
+                onClick={() => setUserGoal('baby')}
+                className={`w-full p-4 rounded-3xl border text-left flex items-center justify-between transition-all duration-300 ${
+                  userGoal === 'baby'
+                    ? 'bg-brand-lightgreen border-brand-green/75 shadow-xs'
+                    : 'bg-white border-brand-beige hover:border-brand-green/30'
+                }`}
+              >
+                <div>
+                  <h3 className="text-sm font-bold text-brand-brown">Baby Dashboard (Kompass)</h3>
+                  <p className="text-[11px] text-gray-500 font-semibold mt-0.5">Track baby milestones and development</p>
+                </div>
+                <span className="text-2xl">👶</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-4">
+            <div className="text-center mb-5">
+              <h2 className="text-[20px] font-extrabold text-brand-brown leading-tight">Complete Setup</h2>
+              <p className="text-[12px] text-gray-500 font-semibold mt-1">Provide data for the selected track.</p>
+            </div>
+
+            {userGoal === 'menstrual' && (
+              <div className="space-y-3 text-left">
+                <div>
+                  <label className="text-[10px] font-bold text-brand-brown uppercase tracking-wider pl-0.5 block mb-1">First Day of Last Period (LMP)</label>
+                  <input
+                    type="date"
+                    value={inputLmp}
+                    onChange={(e) => setInputLmp(e.target.value)}
+                    className="w-full h-10 px-4 bg-white border border-orange-100 rounded-2xl text-xs font-semibold focus:outline-none focus:border-brand-orange shadow-xs"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-brand-brown uppercase tracking-wider pl-0.5 block mb-1">Cycle Length (Days)</label>
+                    <input
+                      type="number"
+                      value={inputLen}
+                      onChange={(e) => setInputLen(Number(e.target.value))}
+                      className="w-full h-10 px-4 bg-white border border-orange-100 rounded-2xl text-xs font-semibold focus:outline-none focus:border-brand-orange shadow-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-brand-brown uppercase tracking-wider pl-0.5 block mb-1">Period Duration (Days)</label>
+                    <input
+                      type="number"
+                      value={inputDur}
+                      onChange={(e) => setInputDur(Number(e.target.value))}
+                      className="w-full h-10 px-4 bg-white border border-orange-100 rounded-2xl text-xs font-semibold focus:outline-none focus:border-brand-orange shadow-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {userGoal === 'pregnancy' && (
+              <div className="space-y-4 text-left">
+                <div>
+                  <label className="text-[11px] font-bold text-brand-brown uppercase tracking-wider pl-0.5 block mb-1">Estimated Due Date (EDD)</label>
+                  <input
+                    type="date"
+                    value={inputDue}
+                    onChange={(e) => setInputDue(e.target.value)}
+                    className="w-full h-11 px-4 bg-white border border-orange-100 rounded-2xl text-xs font-semibold focus:outline-none focus:border-brand-orange shadow-xs"
+                  />
+                  <p className="text-[10px] text-gray-400 font-semibold mt-1 pl-1">Don't know? Standard pregnancy is 280 days from your LMP start date.</p>
+                </div>
+              </div>
+            )}
+
+            {userGoal === 'baby' && (
+              <div className="space-y-3 text-left">
+                <div>
+                  <label className="text-[10px] font-bold text-brand-brown uppercase tracking-wider pl-0.5 block mb-1">Baby's Name</label>
+                  <input
+                    type="text"
+                    value={inputBabyName}
+                    onChange={(e) => setInputBabyName(e.target.value)}
+                    placeholder="e.g. Emilia"
+                    className="w-full h-10 px-4 bg-white border border-orange-100 rounded-2xl text-xs font-semibold focus:outline-none focus:border-brand-orange shadow-xs"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-brand-brown uppercase tracking-wider pl-0.5 block mb-1">Baby's Birth Date (DOB)</label>
+                  <input
+                    type="date"
+                    value={inputBabyDob}
+                    onChange={(e) => setInputBabyDob(e.target.value)}
+                    className="w-full h-10 px-4 bg-white border border-orange-100 rounded-2xl text-xs font-semibold focus:outline-none focus:border-brand-orange shadow-xs"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-brand-brown uppercase tracking-wider pl-0.5 block mb-1">Baby's Gender</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['Boy', 'Girl', 'Surprise'].map((g) => (
+                      <button
+                        type="button"
+                        key={g}
+                        onClick={() => setInputGender(g as any)}
+                        className={`h-10 text-xs font-bold rounded-xl border transition ${
+                          inputGender === g
+                            ? 'bg-brand-green border-brand-green text-white shadow-2xs'
+                            : 'bg-white border-brand-beige text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-8">
+        <button
+          onClick={handleNext}
+          className="w-full h-[48px] bg-brand-brown hover:bg-brand-brown/95 text-white rounded-2xl text-[16px] font-bold flex items-center justify-center shadow-md active:scale-98 transition"
+        >
+          <span>{step === 3 ? 'Start Tracking' : 'Continue'}</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // -------------------------------------------------------------
 // SCREEN 1: MODE SWITCHER & NAVIGATION HUB
 // -------------------------------------------------------------
-function ScreenSwitcher({ onNavigate, selectedBaby }: { onNavigate: (s: string) => void; selectedBaby: string }) {
+function ScreenSwitcher({ 
+  onNavigate, 
+  userName,
+  selectedBaby,
+  cycleInfo,
+  pregnancyInfo,
+  babyInfo
+}: { 
+  onNavigate: (s: string) => void; 
+  userName: string;
+  selectedBaby: string;
+  cycleInfo: { cycleDay: number; daysRemainingInPeriod: number; phase: string };
+  pregnancyInfo: { gestationWeek: number; fruit: string };
+  babyInfo: { ageString: string };
+}) {
   return (
     <div className="p-6 pt-3 animate-fade-in">
       <div className="flex justify-between items-center mb-6">
@@ -363,7 +921,7 @@ function ScreenSwitcher({ onNavigate, selectedBaby }: { onNavigate: (s: string) 
       </div>
 
       <div className="mb-6">
-        <h2 className="text-[22px] font-bold text-brand-brown mb-1 leading-snug">Hello, Lisa! 👋</h2>
+        <h2 className="text-[22px] font-bold text-brand-brown mb-1 leading-snug">Hello, {userName}! 👋</h2>
         <p className="text-[13px] text-brand-brown/70 font-normal">Welcome to your motherhood and cycle companion portal.</p>
       </div>
 
@@ -376,7 +934,9 @@ function ScreenSwitcher({ onNavigate, selectedBaby }: { onNavigate: (s: string) 
           <div className="flex-1 pr-3">
             <span className="px-3 py-1 bg-brand-lightorange text-brand-orange rounded-full text-[10px] font-bold uppercase tracking-wider">Active Stage</span>
             <h3 className="text-base font-bold text-brand-brown mt-2 mb-1">Cycle Tracker</h3>
-            <p className="text-[12px] text-gray-500 leading-snug">Currently: Cycle Day 7. 5 days left in period.</p>
+            <p className="text-[12px] text-gray-500 leading-snug">
+              Currently: Cycle Day {cycleInfo.cycleDay}. {cycleInfo.daysRemainingInPeriod > 0 ? `${cycleInfo.daysRemainingInPeriod} days left in period.` : cycleInfo.phase}
+            </p>
           </div>
           <div className="w-14 h-14 bg-brand-lightorange rounded-2xl flex items-center justify-center text-3xl">🩸</div>
         </div>
@@ -389,7 +949,9 @@ function ScreenSwitcher({ onNavigate, selectedBaby }: { onNavigate: (s: string) 
           <div className="flex-1 pr-3">
             <span className="px-3 py-1 bg-brand-lightbrown text-brand-brown rounded-full text-[10px] font-bold uppercase tracking-wider">Weekly Updates</span>
             <h3 className="text-base font-bold text-brand-brown mt-2 mb-1">Pregnancy Companion</h3>
-            <p className="text-[12px] text-gray-500 leading-snug">Currently: Week 14. Size of a lemon.</p>
+            <p className="text-[12px] text-gray-500 leading-snug">
+              Currently: Week {pregnancyInfo.gestationWeek}. Size of a {pregnancyInfo.fruit.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDFFF]/g, '')}.
+            </p>
           </div>
           <div className="w-14 h-14 bg-brand-lightbrown rounded-2xl flex items-center justify-center text-3xl">🤰</div>
         </div>
@@ -402,7 +964,7 @@ function ScreenSwitcher({ onNavigate, selectedBaby }: { onNavigate: (s: string) 
           <div className="flex-1 pr-3">
             <span className="px-3 py-1 bg-white text-brand-green rounded-full text-[10px] font-bold uppercase tracking-wider">6 Growth Phases</span>
             <h3 className="text-base font-bold text-brand-green mt-2 mb-1">Bamudi Kompass</h3>
-            <p className="text-[12px] text-brand-green/80 leading-snug">Active baby: **{selectedBaby}** (2M, 3W). Track milestones.</p>
+            <p className="text-[12px] text-brand-green/80 leading-snug">Active baby: **{selectedBaby}** ({babyInfo.ageString}). Track milestones.</p>
           </div>
           <div className="w-14 h-14 bg-white/70 rounded-2xl flex items-center justify-center text-3xl">👶</div>
         </div>
@@ -414,7 +976,56 @@ function ScreenSwitcher({ onNavigate, selectedBaby }: { onNavigate: (s: string) 
 // -------------------------------------------------------------
 // SCREEN 2: MENSTRUAL TRACKER HOME
 // -------------------------------------------------------------
-function ScreenMenstrual({ onNavigate }: { onNavigate: (s: string) => void }) {
+function ScreenMenstrual({ 
+  onNavigate,
+  userName,
+  cycleLmpDate,
+  cycleLength,
+  periodDuration,
+  cycleInfo
+}: { 
+  onNavigate: (s: string) => void;
+  userName: string;
+  cycleLmpDate: string;
+  cycleLength: number;
+  periodDuration: number;
+  cycleInfo: {
+    cycleDay: number;
+    phase: string;
+    isMenstruating: boolean;
+    daysRemainingInPeriod: number;
+    isFertile: boolean;
+    ovulationDay: number;
+  };
+}) {
+  const addDays = (dateStr: string, days: number) => {
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() + days);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const nextPeriodStart = addDays(cycleLmpDate, cycleLength);
+  const nextPeriodEnd = addDays(cycleLmpDate, cycleLength + periodDuration - 1);
+  const nextFertileStart = addDays(cycleLmpDate, cycleInfo.ovulationDay - 3);
+  const nextFertileEnd = addDays(cycleLmpDate, cycleInfo.ovulationDay + 2);
+  const nextOvulation = addDays(cycleLmpDate, cycleInfo.ovulationDay);
+
+  // Dynamic SVG circle segments
+  const totalCircumference = 276.46;
+  const menstruationDays = periodDuration;
+  const follicularDays = Math.max(1, cycleInfo.ovulationDay - periodDuration - 1);
+  const ovulationDays = 1.5;
+
+  const mStroke = (menstruationDays / cycleLength) * totalCircumference;
+  const fStroke = (follicularDays / cycleLength) * totalCircumference;
+  const oStroke = (ovulationDays / cycleLength) * totalCircumference;
+  const lStroke = totalCircumference - mStroke - fStroke - oStroke;
+
+  const mOffset = 0;
+  const fOffset = -mStroke;
+  const oOffset = -(mStroke + fStroke);
+  const lOffset = -(mStroke + fStroke + oStroke);
+
   return (
     <div className="p-6 pt-3 animate-fade-in text-gray-900 bg-gradient-to-b from-[#FFF5F8] via-[#FFF1F6] to-[#FDE2EC] min-h-full">
       {/* Header */}
@@ -431,7 +1042,7 @@ function ScreenMenstrual({ onNavigate }: { onNavigate: (s: string) => void }) {
 
       {/* Greeting */}
       <div className="mb-6">
-        <h2 className="text-[20px] font-bold text-gray-900 mb-0.5 leading-snug">Hi, Lisa! 👋</h2>
+        <h2 className="text-[20px] font-bold text-gray-900 mb-0.5 leading-snug">Hi, {userName}! 👋</h2>
         <p className="text-[14px] text-gray-600 font-normal">You're doing amazing!</p>
       </div>
 
@@ -439,7 +1050,7 @@ function ScreenMenstrual({ onNavigate }: { onNavigate: (s: string) => void }) {
       <div className="flex flex-col items-center mb-8 relative">
         <div className="w-[195px] h-[195px] rounded-full flex items-center justify-center relative shadow-[0_4px_16px_rgba(240,60,122,0.06)] border border-[#FFF1F6] bg-white">
           <svg className="absolute top-0 left-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-            {/* Segment 1: Menstruation (Days 1-5) */}
+            {/* Segment 1: Menstruation */}
             <circle 
               cx="50" 
               cy="50" 
@@ -447,11 +1058,11 @@ function ScreenMenstrual({ onNavigate }: { onNavigate: (s: string) => void }) {
               fill="none" 
               stroke="#F03C7A" 
               strokeWidth="4.5" 
-              strokeDasharray="45.37 276.46" 
-              strokeDashoffset="0" 
+              strokeDasharray={`${mStroke} ${totalCircumference}`} 
+              strokeDashoffset={mOffset} 
               strokeLinecap="round" 
             />
-            {/* Segment 2: Follicular (Days 6-13) */}
+            {/* Segment 2: Follicular */}
             <circle 
               cx="50" 
               cy="50" 
@@ -459,11 +1070,11 @@ function ScreenMenstrual({ onNavigate }: { onNavigate: (s: string) => void }) {
               fill="none" 
               stroke="#FFAEC9" 
               strokeWidth="4.5" 
-              strokeDasharray="74.98 276.46" 
-              strokeDashoffset="-49.37" 
+              strokeDasharray={`${fStroke} ${totalCircumference}`} 
+              strokeDashoffset={fOffset} 
               strokeLinecap="round" 
             />
-            {/* Segment 3: Ovulation (Day 14) */}
+            {/* Segment 3: Ovulation */}
             <circle 
               cx="50" 
               cy="50" 
@@ -471,11 +1082,11 @@ function ScreenMenstrual({ onNavigate }: { onNavigate: (s: string) => void }) {
               fill="none" 
               stroke="#D2C7DD" 
               strokeWidth="4.5" 
-              strokeDasharray="5.87 276.46" 
-              strokeDashoffset="-128.35" 
+              strokeDasharray={`${oStroke} ${totalCircumference}`} 
+              strokeDashoffset={oOffset} 
               strokeLinecap="round" 
             />
-            {/* Segment 4: Luteal (Days 15-28) */}
+            {/* Segment 4: Luteal */}
             <circle 
               cx="50" 
               cy="50" 
@@ -483,22 +1094,30 @@ function ScreenMenstrual({ onNavigate }: { onNavigate: (s: string) => void }) {
               fill="none" 
               stroke="#E5DFE3" 
               strokeWidth="4.5" 
-              strokeDasharray="134.22 276.46" 
-              strokeDashoffset="-138.22" 
+              strokeDasharray={`${lStroke} ${totalCircumference}`} 
+              strokeDashoffset={lOffset} 
               strokeLinecap="round" 
             />
           </svg>
           <div className="text-center z-20 flex flex-col items-center justify-center">
             <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-1">CYCLE DAY</p>
-            <p className="text-[56px] font-semibold text-gray-900 leading-none mb-1 font-sans">7</p>
-            <p className="text-[13px] text-gray-400 font-semibold mb-2">of 28</p>
+            <p className="text-[56px] font-semibold text-gray-900 leading-none mb-1 font-sans">{cycleInfo.cycleDay}</p>
+            <p className="text-[13px] text-gray-400 font-semibold mb-2">of {cycleLength}</p>
             <Droplet className="w-4 h-4 text-[#F03C7A] fill-[#F03C7A] mb-1.5" />
-            <span className="text-[13px] font-bold text-[#F03C7A] tracking-wide">Menstruation</span>
+            <span className="text-[13px] font-bold text-[#F03C7A] tracking-wide">{cycleInfo.phase}</span>
           </div>
         </div>
         <div className="mt-5 text-center">
-          <p className="text-[14px] font-semibold text-gray-800">5 days of menstruation left</p>
-          <p className="text-[12px] font-normal text-gray-500">Next fertile window in 6 days</p>
+          <p className="text-[14px] font-semibold text-gray-800">
+            {cycleInfo.daysRemainingInPeriod > 0 
+              ? `${cycleInfo.daysRemainingInPeriod} days of menstruation left` 
+              : `Current Phase: ${cycleInfo.phase}`}
+          </p>
+          <p className="text-[12px] font-normal text-gray-500">
+            {cycleInfo.cycleDay <= cycleInfo.ovulationDay 
+              ? `Next fertile window starts in ${Math.max(0, cycleInfo.ovulationDay - 3 - cycleInfo.cycleDay)} days` 
+              : `Next period in ${Math.max(0, cycleLength - cycleInfo.cycleDay + 1)} days`}
+          </p>
         </div>
       </div>
 
@@ -510,21 +1129,21 @@ function ScreenMenstrual({ onNavigate }: { onNavigate: (s: string) => void }) {
             <Droplet className="w-5 h-5 text-[#F03C7A] flex-shrink-0" fill="currentColor" />
             <div>
               <p className="text-[14px] font-bold text-gray-900">Menstruation</p>
-              <p className="text-[12px] font-normal text-gray-500">May 23 - May 27</p>
+              <p className="text-[12px] font-normal text-gray-500">{nextPeriodStart} - {nextPeriodEnd}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <Leaf className="w-5 h-5 text-[#86C48B] flex-shrink-0" fill="currentColor" />
             <div>
               <p className="text-[14px] font-bold text-gray-900">Fertile Window</p>
-              <p className="text-[12px] font-normal text-gray-500">Jun 2 - Jun 7</p>
+              <p className="text-[12px] font-normal text-gray-500">{nextFertileStart} - {nextFertileEnd}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <Circle className="w-5 h-5 text-[#B696D9] flex-shrink-0" strokeWidth={3} />
             <div>
               <p className="text-[14px] font-bold text-gray-900">Ovulation</p>
-              <p className="text-[12px] font-normal text-gray-500">Jun 5</p>
+              <p className="text-[12px] font-normal text-gray-500">{nextOvulation}</p>
             </div>
           </div>
         </div>
@@ -700,7 +1319,21 @@ function ScreenLogger({
 // -------------------------------------------------------------
 // SCREEN 4: PREGNANCY COMPANION HOME
 // -------------------------------------------------------------
-function ScreenPregnancy({ onNavigate }: { onNavigate: (s: string) => void }) {
+function ScreenPregnancy({ 
+  onNavigate,
+  pregnancyInfo
+}: { 
+  onNavigate: (s: string) => void;
+  pregnancyInfo: {
+    gestationWeek: number;
+    remainingDays: number;
+    trimester: string;
+    fruit: string;
+    sizeDesc: string;
+    extraDesc: string;
+    dueDateString: string;
+  };
+}) {
   return (
     <div className="p-6 pt-3 animate-fade-in">
       <div className="flex justify-between items-center mb-6">
@@ -716,18 +1349,18 @@ function ScreenPregnancy({ onNavigate }: { onNavigate: (s: string) => void }) {
       <div className="bg-white rounded-3xl p-5 border border-brand-beige shadow-xs flex items-center gap-4 mb-6">
         <div className="w-16 h-16 rounded-full bg-brand-lightbrown flex items-center justify-center text-3xl flex-shrink-0">🤰</div>
         <div>
-          <h3 className="text-base font-bold text-brand-brown">Gestation Week 14</h3>
-          <p className="text-[13px] text-gray-500 font-medium">Expected Birth: December 2026</p>
-          <span className="text-[11px] font-bold text-brand-orange bg-brand-lightorange px-2.5 py-0.5 rounded-full mt-1.5 inline-block">2nd Trimester</span>
+          <h3 className="text-base font-bold text-brand-brown">Gestation Week {pregnancyInfo.gestationWeek}</h3>
+          <p className="text-[13px] text-gray-500 font-medium">Expected Birth: {pregnancyInfo.dueDateString}</p>
+          <span className="text-[11px] font-bold text-brand-orange bg-brand-lightorange px-2.5 py-0.5 rounded-full mt-1.5 inline-block">{pregnancyInfo.trimester}</span>
         </div>
       </div>
 
       {/* Fruit Size indicator */}
       <div className="bg-brand-lightorange rounded-3xl p-5 border border-brand-orange/20 mb-6 text-center">
         <p className="text-[11px] font-bold text-brand-brown uppercase tracking-wider mb-1.5">Your Baby is the size of a...</p>
-        <h3 className="text-xl font-bold text-brand-orange mb-3">🍋 Lemon</h3>
+        <h3 className="text-xl font-bold text-brand-orange mb-3">{pregnancyInfo.fruit}</h3>
         <p className="text-[12px] text-brand-brown/80 leading-relaxed max-w-[280px] mx-auto">
-          Baby is about 8.5 cm long and weighs around 43 grams. Fingerprints are starting to form!
+          {pregnancyInfo.sizeDesc} {pregnancyInfo.extraDesc}
         </p>
       </div>
 
@@ -754,7 +1387,11 @@ function ScreenPregnancy({ onNavigate }: { onNavigate: (s: string) => void }) {
         <div>
           <h4 className="text-[13px] font-bold text-brand-green mb-1">Weekly Tip</h4>
           <p className="text-[12px] text-brand-green/85 leading-relaxed">
-            Nausea might decline now. Take advantage to eat healthy greens and rest.
+            {pregnancyInfo.gestationWeek < 13 
+              ? "Ensure proper rest and take prenatal vitamins. Drink lots of water."
+              : pregnancyInfo.gestationWeek < 28 
+              ? "Energy might be back. Try mild walking and stretch routines."
+              : "Prepare your hospital bag and review birth preferences."}
           </p>
         </div>
       </div>
@@ -765,7 +1402,22 @@ function ScreenPregnancy({ onNavigate }: { onNavigate: (s: string) => void }) {
 // -------------------------------------------------------------
 // SCREEN 5: BABY DASHBOARD (KOMPASS OVERVIEW)
 // -------------------------------------------------------------
-function ScreenDashboard({ onNavigate, selectedBaby }: { onNavigate: (s: string) => void; selectedBaby: string }) {
+function ScreenDashboard({ 
+  onNavigate, 
+  selectedBaby,
+  babyInfo
+}: { 
+  onNavigate: (s: string) => void; 
+  selectedBaby: string;
+  babyInfo: {
+    months: number;
+    weeks: number;
+    phase: string;
+    phaseTitle: string;
+    phaseDescription: string;
+    ageString: string;
+  };
+}) {
   return (
     <div className="p-6 pt-3 animate-fade-in">
       {/* Header */}
@@ -786,8 +1438,8 @@ function ScreenDashboard({ onNavigate, selectedBaby }: { onNavigate: (s: string)
         </div>
         <div>
           <h3 className="text-[18px] font-bold text-brand-brown">{selectedBaby}</h3>
-          <p className="text-[13px] text-gray-500 font-medium">2 Months, 3 Weeks old</p>
-          <span className="text-[11px] font-bold text-brand-green bg-brand-lightgreen px-2.5 py-0.5 rounded-full mt-1.5 inline-block">Phase 1: 0 - 3 Months</span>
+          <p className="text-[13px] text-gray-500 font-medium">{babyInfo.ageString}</p>
+          <span className="text-[11px] font-bold text-brand-green bg-brand-lightgreen px-2.5 py-0.5 rounded-full mt-1.5 inline-block">{babyInfo.phase}</span>
         </div>
       </div>
 
@@ -798,7 +1450,7 @@ function ScreenDashboard({ onNavigate, selectedBaby }: { onNavigate: (s: string)
       >
         <div className="flex-1 pr-2">
           <p className="text-[11px] font-bold text-brand-green uppercase tracking-wider mb-1">Milestones progress</p>
-          <h3 className="text-base font-bold text-brand-green mb-2 leading-tight">Phase 1 Checklist</h3>
+          <h3 className="text-base font-bold text-brand-green mb-2 leading-tight">{babyInfo.phase.split(':')[0]} Checklist</h3>
           <p className="text-[12px] text-brand-green/80 leading-snug">3 of 6 milestones checked. Keep tracking daily!</p>
         </div>
         <div className="w-16 h-16 rounded-full border-4 border-brand-lightgreen flex items-center justify-center relative flex-shrink-0 bg-white shadow-xs">
@@ -1079,7 +1731,21 @@ function ScreenRatgeber({ onNavigate, activeMode }: { onNavigate: (s: string) =>
 // -------------------------------------------------------------
 // SCREEN 9: SETTINGS & ACCOUNT PROFILE
 // -------------------------------------------------------------
-function ScreenProfile({ onNavigate, activeMode, selectedBaby, setSelectedBaby, onLogOut }: { onNavigate: (s: string) => void; activeMode: 'menstrual' | 'pregnancy' | 'baby'; selectedBaby: string; setSelectedBaby: (b: string) => void; onLogOut?: () => void }) {
+function ScreenProfile({ 
+  onNavigate, 
+  activeMode, 
+  selectedBaby, 
+  setSelectedBaby, 
+  babyInfo,
+  onLogOut 
+}: { 
+  onNavigate: (s: string) => void; 
+  activeMode: 'menstrual' | 'pregnancy' | 'baby'; 
+  selectedBaby: string; 
+  setSelectedBaby: (b: string) => void; 
+  babyInfo: { ageString: string };
+  onLogOut?: () => void 
+}) {
   const settingsList = [
     { name: 'Manage baby profile', icon: '👶' },
     { name: 'Updates & notifications', icon: '🔔' },
@@ -1102,17 +1768,17 @@ function ScreenProfile({ onNavigate, activeMode, selectedBaby, setSelectedBaby, 
           <MammothLogo className="w-full h-full" />
         </div>
         <h3 className="text-lg font-bold text-brand-brown mb-1">{selectedBaby}</h3>
-        <p className="text-xs text-gray-500 font-medium mb-3">Baby: 2 Months, 3 Weeks old</p>
+        <p className="text-xs text-gray-500 font-medium mb-3">Baby: {babyInfo.ageString}</p>
         
         {/* Toggle Baby Name */}
         <div className="flex gap-2 bg-brand-cream border border-brand-beige p-1 rounded-xl">
           <button 
-            onClick={() => setSelectedBaby('Emilia')}
+            onClick={() => setSelectedBaby(selectedBaby)}
             className={`px-3 py-1 text-[11px] font-bold rounded-lg transition ${
-              selectedBaby === 'Emilia' ? 'bg-brand-green text-white' : 'text-gray-500 hover:text-gray-900'
+              selectedBaby !== 'Leo' ? 'bg-brand-green text-white' : 'text-gray-500 hover:text-gray-900'
             }`}
           >
-            Emilia
+            {selectedBaby !== 'Leo' ? selectedBaby : 'Emilia'}
           </button>
           <button 
             onClick={() => setSelectedBaby('Leo')}
@@ -1721,10 +2387,12 @@ function ScreenInsights({ onNavigate }: { onNavigate: (s: string) => void }) {
 // -------------------------------------------------------------
 function ScreenLogin({ 
   onLogin, 
-  onNavigateAuth 
+  onNavigateAuth,
+  onQuickDemoLogin
 }: { 
   onLogin: () => void; 
   onNavigateAuth: (view: 'login' | 'signup' | 'forgot') => void;
+  onQuickDemoLogin?: () => void;
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -1744,7 +2412,11 @@ function ScreenLogin({
   const handleDemoLogin = () => {
     setEmail('lisa@bamudi.com');
     setPassword('password123');
-    onLogin();
+    if (onQuickDemoLogin) {
+      onQuickDemoLogin();
+    } else {
+      onLogin();
+    }
   };
 
   return (
@@ -1894,8 +2566,10 @@ function ScreenLogin({
 // SCREEN 0b: AUTHENTICATION - SIGN UP
 // -------------------------------------------------------------
 function ScreenSignUp({ 
+  onRegister,
   onNavigateAuth 
 }: { 
+  onRegister: (userName: string) => void;
   onNavigateAuth: (view: 'login' | 'signup' | 'forgot') => void;
 }) {
   const [name, setName] = useState('');
@@ -1922,7 +2596,7 @@ function ScreenSignUp({
     }
     setSuccess(true);
     setTimeout(() => {
-      onNavigateAuth('login');
+      onRegister(name);
     }, 1500);
   };
 
