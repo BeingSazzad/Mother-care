@@ -1051,7 +1051,7 @@ function ScreenSwitcher({
               <span className="px-3 py-1 bg-[#EEF8F1] text-brand-green rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-2xs">
                 Active Baby
               </span>
-              <h3 className="text-[17px] font-black text-brand-green mt-2.5">Bamudi Kompass</h3>
+              <h3 className="text-[17px] font-black text-brand-green mt-2.5">Bamudi Compass</h3>
             </div>
             <div className="w-14 h-14 bg-white/80 rounded-2xl shadow-sm border border-emerald-100/60 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
               <span>👶</span>
@@ -1692,7 +1692,7 @@ function ScreenDashboard({
         <div className="flex items-center gap-1.5">
           <MammothLogo className="w-6 h-6" />
           <span className="font-extrabold text-[15px] tracking-wide text-brand-brown">BAMUDI</span>
-          <span className="font-bold text-[15px] tracking-wide text-brand-green">KOMPASS</span>
+          <span className="font-bold text-[15px] tracking-wide text-brand-green">COMPASS</span>
         </div>
         <Settings className="w-6 h-6 text-brand-brown cursor-pointer" onClick={() => onNavigate('profile')} />
       </div>
