@@ -120,6 +120,10 @@ export default function App() {
   const [periodDuration, setPeriodDuration] = useState(5);
 
   const [pregnancyDueDate, setPregnancyDueDate] = useState('2026-12-15');
+  const [pregnancyKicks, setPregnancyKicks] = useState(6);
+  const [pregnancyMood, setPregnancyMood] = useState('Good');
+  const [pregnancySymptoms, setPregnancySymptoms] = useState<string[]>(['Morning sickness', 'Fatigue']);
+  const [pregnancyNotes, setPregnancyNotes] = useState('Feeling active today! Baby kicked a few times. 👶✨');
 
   const [babyName, setBabyName] = useState('Emilia');
   const [babyDob, setBabyDob] = useState('2026-04-15');
@@ -336,15 +340,37 @@ export default function App() {
     );
   };
 
+  const togglePregnancySymptom = (symptom: string) => {
+    setPregnancySymptoms(prev => 
+      prev.includes(symptom) ? prev.filter(s => s !== symptom) : [...prev, symptom]
+    );
+  };
+
   const navigateTo = (screen: string) => {
     setActiveScreen(screen);
-    if (['menstrual', 'logger', 'calendar', 'analytics'].includes(screen)) {
+    if (screen === 'menstrual') {
       setActiveMode('menstrual');
-    } else if (['pregnancy'].includes(screen)) {
+    } else if (screen === 'pregnancy') {
       setActiveMode('pregnancy');
-    } else if (['dashboard', 'milestones', 'ratgeber', 'profile'].includes(screen)) {
+    } else if (screen === 'dashboard') {
       setActiveMode('baby');
     }
+  };
+
+  const getThemeBackground = () => {
+    if (!isLoggedIn) {
+      return "bg-gradient-to-b from-[#FFFDFB] via-[#FFF0E6] to-[#FDE2EC]";
+    }
+    if (!hasCompletedOnboarding) {
+      return "bg-gradient-to-b from-[#FFFDFB] via-[#FFF5F0] to-[#FDEADA]";
+    }
+    if (activeMode === 'menstrual') {
+      return "bg-gradient-to-b from-[#FFF5F8] via-[#FFF1F6] to-[#FDE2EC]";
+    }
+    if (activeMode === 'pregnancy') {
+      return "bg-gradient-to-b from-[#FFFDFB] via-[#FFF5F0] to-[#FFF9F6]";
+    }
+    return "bg-gradient-to-b from-[#FFFDFB] via-[#EAF6ED] to-[#DFEDE2]";
   };
 
   const screenNames = [
@@ -440,7 +466,7 @@ export default function App() {
           </div>
 
           {/* Active Screen Rendering */}
-          <div className="flex-1 overflow-y-auto no-scrollbar pb-24 bg-brand-cream/40">
+          <div className={`flex-1 overflow-y-auto no-scrollbar pb-24 ${getThemeBackground()}`}>
             {!isLoggedIn ? (
               <>
                 {authView === 'login' && (
@@ -528,14 +554,17 @@ export default function App() {
                 {activeScreen === 'logger' && (
                   <ScreenLogger 
                     onNavigate={navigateTo} 
-                    mood={mood} 
-                    setMood={setMood} 
-                    selectedSymptoms={selectedSymptoms} 
-                    toggleSymptom={toggleSymptom} 
+                    activeMode={activeMode}
+                    mood={activeMode === 'pregnancy' ? pregnancyMood : mood} 
+                    setMood={activeMode === 'pregnancy' ? setPregnancyMood : setMood} 
+                    selectedSymptoms={activeMode === 'pregnancy' ? pregnancySymptoms : selectedSymptoms} 
+                    toggleSymptom={activeMode === 'pregnancy' ? togglePregnancySymptom : toggleSymptom} 
                     bleedingFlow={bleedingFlow} 
                     setBleedingFlow={setBleedingFlow} 
-                    notes={notes} 
-                    setNotes={setNotes} 
+                    notes={activeMode === 'pregnancy' ? pregnancyNotes : notes} 
+                    setNotes={activeMode === 'pregnancy' ? setPregnancyNotes : setNotes} 
+                    pregnancyKicks={pregnancyKicks}
+                    setPregnancyKicks={setPregnancyKicks}
                   />
                 )}
                 {activeScreen === 'analytics' && (
@@ -545,6 +574,8 @@ export default function App() {
                   <ScreenPregnancy 
                     onNavigate={navigateTo} 
                     pregnancyInfo={calculatePregnancyInfo()}
+                    pregnancyKicks={pregnancyKicks}
+                    setPregnancyKicks={setPregnancyKicks}
                   />
                 )}
                 {activeScreen === 'dashboard' && (
@@ -1238,12 +1269,12 @@ function ScreenMenstrual({
     </div>
   );
 }
-
 // -------------------------------------------------------------
 // SCREEN 3: MENSTRUAL LOGGER (moods, symptoms, flow)
 // -------------------------------------------------------------
 function ScreenLogger({ 
   onNavigate, 
+  activeMode,
   mood, 
   setMood, 
   selectedSymptoms, 
@@ -1251,9 +1282,12 @@ function ScreenLogger({
   bleedingFlow, 
   setBleedingFlow, 
   notes, 
-  setNotes 
+  setNotes,
+  pregnancyKicks,
+  setPregnancyKicks
 }: { 
   onNavigate: (s: string) => void;
+  activeMode: 'menstrual' | 'pregnancy' | 'baby';
   mood: string;
   setMood: (mood: string) => void;
   selectedSymptoms: string[];
@@ -1262,8 +1296,18 @@ function ScreenLogger({
   setBleedingFlow: (flow: string) => void;
   notes: string;
   setNotes: (notes: string) => void;
+  pregnancyKicks?: number;
+  setPregnancyKicks?: (k: number) => void;
 }) {
-  const moods = [
+  const isPregnancy = activeMode === 'pregnancy';
+
+  const moods = isPregnancy ? [
+    { label: 'Great', emoji: '😍' },
+    { label: 'Good', emoji: '🙂' },
+    { label: 'Tired', emoji: '😐' },
+    { label: 'Emotional', emoji: '🥺' },
+    { label: 'Exhausted', emoji: '😫' },
+  ] : [
     { label: 'Great', emoji: '😍' },
     { label: 'Good', emoji: '🙂' },
     { label: 'Okay', emoji: '😐' },
@@ -1271,7 +1315,10 @@ function ScreenLogger({
     { label: 'Terrible', emoji: '😫' },
   ];
 
-  const symptoms = [
+  const symptoms = isPregnancy ? [
+    'Morning sickness', 'Fatigue', 'Backache', 
+    'Swollen feet', 'Heartburn', 'Mood swings', 'Headache'
+  ] : [
     'Cramps', 'Backache', 'Headache', 
     'Bloating', 'Fatigue', 'Acne', 
     'Breast tenderness', 'Nausea', 'Sleep issues'
@@ -1280,11 +1327,15 @@ function ScreenLogger({
   const flows = ['Very light', 'Light', 'Medium', 'Heavy', 'Very heavy'];
 
   return (
-    <div className="p-6 pt-3 animate-fade-in text-gray-900 bg-gradient-to-b from-[#FFF5F8] via-[#FFF1F6] to-[#FDE2EC] min-h-full">
+    <div className={`p-6 pt-3 animate-fade-in text-gray-900 min-h-full ${
+      isPregnancy 
+        ? 'bg-gradient-to-b from-[#FFFDFB] via-[#FFF5F0] to-[#FDEADA]' 
+        : 'bg-gradient-to-b from-[#FFF5F8] via-[#FFF1F6] to-[#FDE2EC]'
+    }`}>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <ArrowLeft className="w-6 h-6 text-gray-700 cursor-pointer" onClick={() => onNavigate('menstrual')} />
-        <h2 className="text-[16px] font-bold text-gray-900">Today, May 7</h2>
+        <ArrowLeft className="w-6 h-6 text-gray-700 cursor-pointer" onClick={() => onNavigate(isPregnancy ? 'pregnancy' : 'menstrual')} />
+        <h2 className="text-[16px] font-bold text-gray-900">{isPregnancy ? 'Pregnancy Journal' : 'Today\'s Cycle Log'}</h2>
         <div className="w-6 h-6"></div>
       </div>
 
@@ -1301,7 +1352,7 @@ function ScreenLogger({
                 onClick={() => setMood(m.label)}
                 className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl cursor-pointer transition-all ${
                   isSelected 
-                    ? 'bg-[#EEF8F0] border border-[#86C48B] scale-105 shadow-2xs' 
+                    ? (isPregnancy ? 'bg-orange-50 border border-brand-orange scale-105 shadow-2xs' : 'bg-[#EEF8F0] border border-[#86C48B] scale-105 shadow-2xs') 
                     : 'border border-transparent hover:bg-gray-50'
                 }`}
               >
@@ -1326,7 +1377,7 @@ function ScreenLogger({
                 onClick={() => toggleSymptom(s)}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
                   isSelected 
-                    ? 'bg-[#FDE5EF] text-[#F03C7A] border-[#FAD7E4] shadow-2xs' 
+                    ? (isPregnancy ? 'bg-orange-100/70 text-brand-orange border-orange-200 shadow-2xs' : 'bg-[#FDE5EF] text-[#F03C7A] border-[#FAD7E4] shadow-2xs') 
                     : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}
               >
@@ -1337,37 +1388,58 @@ function ScreenLogger({
         </div>
       </div>
 
-      {/* Bleeding Section */}
-      <div className="mb-8">
-        <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 pl-1">Bleeding</h3>
-        <p className="text-[13px] text-gray-500 font-medium mb-3.5 pl-1">How heavy is your flow?</p>
-        <div className="flex justify-between bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
-          {flows.map((f, i) => {
-            const isSelected = bleedingFlow === f;
-            return (
-              <div 
-                key={f} 
-                onClick={() => setBleedingFlow(f)}
-                className="flex flex-col items-center gap-2 cursor-pointer group"
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                  isSelected 
-                    ? 'border-2 border-[#F03C7A] bg-[#FDE5EF]' 
-                    : 'border border-gray-100 bg-gray-50 group-hover:bg-gray-100'
-                }`}>
-                  <Droplet 
-                    className={`w-5 h-5 ${i === 0 && !isSelected ? 'text-gray-300' : 'text-[#F03C7A]'}`} 
-                    fill={(i > 0 || isSelected) ? "currentColor" : "none"} 
-                  />
-                </div>
-                <span className={`text-[10px] text-center w-12 leading-tight transition-all ${
-                  isSelected ? 'font-bold text-gray-900' : 'font-semibold text-gray-500'
-                }`}>{f}</span>
-              </div>
-            );
-          })}
+      {/* Special Context-Based Area */}
+      {isPregnancy ? (
+        /* Kick Counter Area for Pregnancy */
+        <div className="mb-8">
+          <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 pl-1">Baby Kicks</h3>
+          <p className="text-[13px] text-gray-500 font-medium mb-3.5 pl-1">Track baby's active moments</p>
+          <div className="flex justify-between items-center bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+            <div>
+              <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Current Count</p>
+              <h4 className="text-[22px] font-black text-brand-brown">{pregnancyKicks || 0} kicks</h4>
+            </div>
+            <button 
+              onClick={() => setPregnancyKicks && setPregnancyKicks((pregnancyKicks || 0) + 1)}
+              className="px-5 py-2.5 bg-gradient-to-r from-brand-orange to-amber-500 hover:opacity-95 text-white font-bold rounded-2xl text-xs shadow-2xs active:scale-95 transition"
+            >
+              + Log Kick
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Bleeding Flow Area for Menstruation */
+        <div className="mb-8">
+          <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 pl-1">Bleeding</h3>
+          <p className="text-[13px] text-gray-500 font-medium mb-3.5 pl-1">How heavy is your flow?</p>
+          <div className="flex justify-between bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
+            {flows.map((f, i) => {
+              const isSelected = bleedingFlow === f;
+              return (
+                <div 
+                  key={f} 
+                  onClick={() => setBleedingFlow(f)}
+                  className="flex flex-col items-center gap-2 cursor-pointer group"
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                    isSelected 
+                      ? 'border-2 border-[#F03C7A] bg-[#FDE5EF]' 
+                      : 'border border-gray-100 bg-gray-50 group-hover:bg-gray-100'
+                  }`}>
+                    <Droplet 
+                      className={`w-5 h-5 ${i === 0 && !isSelected ? 'text-gray-300' : 'text-[#F03C7A]'}`} 
+                      fill={(i > 0 || isSelected) ? "currentColor" : "none"} 
+                    />
+                  </div>
+                  <span className={`text-[10px] text-center w-12 leading-tight transition-all ${
+                    isSelected ? 'font-bold text-gray-900' : 'font-semibold text-gray-500'
+                  }`}>{f}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Notes Section */}
       <div className="mb-8">
@@ -1376,16 +1448,18 @@ function ScreenLogger({
         <textarea 
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="w-full h-24 p-4 bg-white border border-gray-200 rounded-3xl text-sm focus:outline-none focus:border-[#F03C7A] leading-relaxed shadow-sm resize-none"
-          placeholder="Log notes about your day..."
+          className="w-full h-24 p-4 bg-white border border-gray-200 rounded-3xl text-sm focus:outline-none focus:border-brand-orange leading-relaxed shadow-sm resize-none"
+          placeholder={isPregnancy ? "Log pregnancy updates or memories..." : "Log notes about your cycle..."}
         />
       </div>
 
       <button 
-        onClick={() => onNavigate('menstrual')}
-        className="w-full h-[48px] bg-brand-brown hover:bg-brand-brown/95 text-white rounded-2xl text-[16px] font-bold flex items-center justify-center shadow-md active:scale-98 transition-all"
+        onClick={() => onNavigate(isPregnancy ? 'pregnancy' : 'menstrual')}
+        className={`w-full h-[48px] text-white rounded-2xl text-[16px] font-bold flex items-center justify-center shadow-md active:scale-98 transition-all ${
+          isPregnancy ? 'bg-brand-orange hover:bg-brand-orange/95' : 'bg-brand-brown hover:bg-brand-brown/95'
+        }`}
       >
-        <span>Save cycle log</span>
+        <span>{isPregnancy ? 'Save pregnancy log' : 'Save cycle log'}</span>
       </button>
     </div>
   );
@@ -1396,7 +1470,9 @@ function ScreenLogger({
 // -------------------------------------------------------------
 function ScreenPregnancy({ 
   onNavigate,
-  pregnancyInfo
+  pregnancyInfo,
+  pregnancyKicks,
+  setPregnancyKicks
 }: { 
   onNavigate: (s: string) => void;
   pregnancyInfo: {
@@ -1408,65 +1484,179 @@ function ScreenPregnancy({
     extraDesc: string;
     dueDateString: string;
   };
+  pregnancyKicks: number;
+  setPregnancyKicks: (k: number) => void;
 }) {
+  const getFetalStats = (week: number) => {
+    if (week <= 8) return { len: '1.6 cm', wt: '1 g' };
+    if (week <= 12) return { len: '5.4 cm', wt: '14 g' };
+    if (week <= 16) return { len: '11.6 cm', wt: '100 g' };
+    if (week <= 20) return { len: '25.6 cm', wt: '300 g' };
+    if (week <= 24) return { len: '30 cm', wt: '600 g' };
+    if (week <= 28) return { len: '37.6 cm', wt: '1000 g' };
+    if (week <= 32) return { len: '42.4 cm', wt: '1700 g' };
+    if (week <= 36) return { len: '47.4 cm', wt: '2600 g' };
+    return { len: '51.2 cm', wt: '3400 g' };
+  };
+
+  const stats = getFetalStats(pregnancyInfo.gestationWeek);
+  const isTrimester1 = pregnancyInfo.gestationWeek <= 13;
+  const isTrimester2 = pregnancyInfo.gestationWeek > 13 && pregnancyInfo.gestationWeek <= 27;
+  const isTrimester3 = pregnancyInfo.gestationWeek > 27;
+
   return (
-    <div className="p-6 pt-3 animate-fade-in">
-      <div className="flex justify-between items-center mb-6">
-        <ArrowLeft className="w-6 h-6 text-brand-brown cursor-pointer" onClick={() => onNavigate('switcher')} />
-        <div className="flex items-center gap-1.5">
-          <MammothLogo className="w-5 h-5" />
-          <span className="font-extrabold text-[15px] text-brand-brown">Pregnancy Mode</span>
+    <div className="p-6 pt-4 animate-fade-in space-y-6 text-gray-900 bg-gradient-to-b from-[#FFFDFB] via-[#FFF5F0] to-[#FFF9F6] min-h-full">
+      {/* Premium Header */}
+      <div className="flex justify-between items-center bg-white/70 backdrop-blur-md p-3 -mx-3 rounded-3xl border border-white/50 shadow-2xs">
+        <button 
+          onClick={() => onNavigate('switcher')}
+          className="w-10 h-10 rounded-2xl hover:bg-gray-100/50 flex items-center justify-center transition"
+        >
+          <ArrowLeft className="w-5 h-5 text-brand-brown" />
+        </button>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-brand-orange/10 rounded-2xl flex items-center justify-center">
+            <span className="text-sm">🤰</span>
+          </div>
+          <span className="font-extrabold text-[15px] text-brand-brown tracking-wide">Pregnancy Mode</span>
         </div>
-        <Settings className="w-6 h-6 text-brand-brown" />
+        <button 
+          onClick={() => onNavigate('profile')}
+          className="w-10 h-10 rounded-2xl hover:bg-gray-100/50 flex items-center justify-center transition"
+        >
+          <Settings className="w-5 h-5 text-brand-brown" />
+        </button>
       </div>
 
-      {/* Week indicator */}
-      <div className="bg-white rounded-3xl p-5 border border-brand-beige shadow-xs flex items-center gap-4 mb-6">
-        <div className="w-16 h-16 rounded-full bg-brand-lightbrown flex items-center justify-center text-3xl flex-shrink-0">🤰</div>
-        <div>
-          <h3 className="text-base font-bold text-brand-brown">Gestation Week {pregnancyInfo.gestationWeek}</h3>
-          <p className="text-[13px] text-gray-500 font-medium">Expected Birth: {pregnancyInfo.dueDateString}</p>
-          <span className="text-[11px] font-bold text-brand-orange bg-brand-lightorange px-2.5 py-0.5 rounded-full mt-1.5 inline-block">{pregnancyInfo.trimester}</span>
+      {/* Hero Gestation Tracker */}
+      <div className="bg-gradient-to-br from-brand-brown to-[#5A3825] rounded-[32px] p-6 text-white shadow-md relative overflow-hidden">
+        <div className="absolute -top-12 -right-12 w-28 h-28 bg-white/5 rounded-full blur-xl"></div>
+        <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-white/5 rounded-full blur-lg"></div>
+        
+        <div className="relative z-10 space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="px-3 py-1 bg-white/15 text-[10px] font-extrabold uppercase tracking-widest rounded-full backdrop-blur-md">
+              {pregnancyInfo.trimester}
+            </span>
+            <span className="text-xs font-bold text-white/80">Due Date: {pregnancyInfo.dueDateString}</span>
+          </div>
+          
+          <div className="space-y-1">
+            <p className="text-[11px] text-white/70 font-semibold tracking-wider uppercase">Gestation Period</p>
+            <h2 className="text-[36px] font-black leading-none">Week {pregnancyInfo.gestationWeek}</h2>
+          </div>
+          
+          {/* Progress bar inside the hero */}
+          <div className="space-y-1.5">
+            <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-brand-orange rounded-full transition-all duration-500" 
+                style={{ width: `${(pregnancyInfo.gestationWeek / 40) * 100}%` }}
+              ></div>
+            </div>
+            <div className="flex justify-between text-[11px] font-bold text-white/70">
+              <span>Day {(pregnancyInfo.gestationWeek * 7) - 6}</span>
+              <span>{Math.max(0, 280 - (pregnancyInfo.gestationWeek * 7))} Days remaining</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Fruit Size indicator */}
-      <div className="bg-brand-lightorange rounded-3xl p-5 border border-brand-orange/20 mb-6 text-center">
-        <p className="text-[11px] font-bold text-brand-brown uppercase tracking-wider mb-1.5">Your Baby is the size of a...</p>
-        <h3 className="text-xl font-bold text-brand-orange mb-3">{pregnancyInfo.fruit}</h3>
-        <p className="text-[12px] text-brand-brown/80 leading-relaxed max-w-[280px] mx-auto">
+      {/* Trimester Timeline */}
+      <div className="space-y-2">
+        <h4 className="text-[11px] font-extrabold text-brand-brown/50 uppercase tracking-widest pl-1">Trimester Timeline</h4>
+        <div className="flex gap-2 p-1 bg-white border border-brand-beige rounded-2xl shadow-2xs">
+          <div className={`flex-1 text-center py-2 text-[10px] font-extrabold rounded-xl transition ${
+            isTrimester1 ? 'bg-brand-orange text-white shadow-2xs' : 'text-gray-400'
+          }`}>
+            Trimester 1
+          </div>
+          <div className={`flex-1 text-center py-2 text-[10px] font-extrabold rounded-xl transition ${
+            isTrimester2 ? 'bg-brand-orange text-white shadow-2xs' : 'text-gray-400'
+          }`}>
+            Trimester 2
+          </div>
+          <div className={`flex-1 text-center py-2 text-[10px] font-extrabold rounded-xl transition ${
+            isTrimester3 ? 'bg-brand-orange text-white shadow-2xs' : 'text-gray-400'
+          }`}>
+            Trimester 3
+          </div>
+        </div>
+      </div>
+
+      {/* Baby Size Visualizer Card */}
+      <div className="bg-gradient-to-br from-[#FFF7F0] via-[#FFF2E6] to-[#FDEADA] rounded-[32px] p-5 border border-orange-100/60 shadow-2xs space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-orange-100/50 flex items-center justify-center text-3xl flex-shrink-0">
+            {pregnancyInfo.fruit.match(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDFFF]/) 
+              ? pregnancyInfo.fruit.substring(0, 2) 
+              : '🥑'}
+          </div>
+          <div className="space-y-0.5">
+            <span className="text-[10px] font-black uppercase text-brand-orange tracking-widest">Fetal Development</span>
+            <h3 className="text-[17px] font-black text-brand-brown">
+              Size of a {pregnancyInfo.fruit.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDFFF]/g, '')}
+            </h3>
+            <div className="flex gap-3 text-[11px] font-bold text-gray-500 pt-0.5">
+              <span>Length: <strong className="text-brand-brown">{stats.len}</strong></span>
+              <span>•</span>
+              <span>Weight: <strong className="text-brand-brown">{stats.wt}</strong></span>
+            </div>
+          </div>
+        </div>
+        <p className="text-[12px] font-semibold text-brand-brown/85 leading-relaxed pl-1">
           {pregnancyInfo.sizeDesc} {pregnancyInfo.extraDesc}
         </p>
       </div>
 
-      {/* Nesting quick links */}
-      <div className="bg-white rounded-3xl p-5 border border-brand-beige space-y-4 mb-6">
-        <h4 className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-1">Nesting Checklists</h4>
+      {/* Nesting Checklist & Interactive Kick Counter (Two Column Bento Grid) */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Kick Counter Card */}
+        <div className="bg-white p-5 rounded-[28px] border border-brand-beige shadow-2xs flex flex-col justify-between space-y-3">
+          <div className="space-y-1">
+            <span className="text-[10px] font-extrabold text-[#F03C7A] uppercase tracking-wider block">Baby Kicks</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-black text-brand-brown">{pregnancyKicks}</span>
+              <span className="text-[10px] text-gray-400 font-bold">today</span>
+            </div>
+          </div>
+          <button 
+            onClick={() => setPregnancyKicks(pregnancyKicks + 1)}
+            className="w-full py-2 bg-gradient-to-r from-rose-400 to-[#F03C7A] hover:opacity-95 active:scale-95 transition text-white rounded-xl text-[11px] font-bold shadow-2xs flex items-center justify-center gap-1"
+          >
+            <span>+ Log Kick</span>
+          </button>
+        </div>
+
+        {/* Nesting Tasks Link */}
         <div 
           onClick={() => onNavigate('checklists')}
-          className="flex justify-between items-center cursor-pointer py-1 hover:text-brand-green transition"
+          className="bg-white p-5 rounded-[28px] border border-brand-beige shadow-2xs flex flex-col justify-between cursor-pointer hover:border-brand-green/30 transition-all duration-200"
         >
-          <div className="flex items-center gap-2.5 text-xs font-semibold text-brand-brown">
-            <CheckSquare className="w-4 h-4 text-brand-green" />
-            <span>Kliniktasche (Hospital Bag)</span>
+          <div className="space-y-1">
+            <span className="text-[10px] font-extrabold text-brand-green uppercase tracking-wider block">Nesting Guide</span>
+            <h4 className="text-[13px] font-bold text-brand-brown leading-tight">Clinic Bag & Nursery</h4>
           </div>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
+          <div className="flex items-center justify-between text-[11px] font-bold text-brand-green pt-2">
+            <span>Open Tasks</span>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+          </div>
         </div>
       </div>
 
-      {/* Tip Card */}
-      <div className="bg-brand-lightgreen border border-brand-green/20 p-5 rounded-3xl flex gap-3.5">
-        <div className="w-10 h-10 rounded-xl bg-white border border-brand-green/10 flex items-center justify-center flex-shrink-0 text-xl">
+      {/* Weekly Tips */}
+      <div className="bg-[#EAF6ED] border border-brand-green/10 p-5 rounded-[32px] flex gap-4 shadow-2xs">
+        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 text-2xl shadow-sm border border-emerald-100/50">
           💡
         </div>
-        <div>
-          <h4 className="text-[13px] font-bold text-brand-green mb-1">Weekly Tip</h4>
-          <p className="text-[12px] text-brand-green/85 leading-relaxed">
+        <div className="space-y-1">
+          <h4 className="text-[13px] font-bold text-brand-green">Weekly Pregnancy Tip</h4>
+          <p className="text-[12px] text-brand-green/90 leading-relaxed font-semibold">
             {pregnancyInfo.gestationWeek < 13 
-              ? "Ensure proper rest and take prenatal vitamins. Drink lots of water."
+              ? "Ensure proper rest and take prenatal vitamins. Drink lots of water to stay hydrated."
               : pregnancyInfo.gestationWeek < 28 
-              ? "Energy might be back. Try mild walking and stretch routines."
-              : "Prepare your hospital bag and review birth preferences."}
+              ? "Second trimester energy boost! Try mild walking, stretch routines, and moderate workouts."
+              : "Review birth preferences and ensure your hospital bag packing checklist is complete."}
           </p>
         </div>
       </div>
@@ -1928,7 +2118,9 @@ function BottomTabBar({ activeTab, setActiveTab, context }: BottomProps) {
       return [
         { id: 'pregnancy', icon: Home, label: 'Gestation' },
         { id: 'checklists', icon: CheckSquare, label: 'Checklists' },
-        { id: 'switcher', icon: Menu, label: 'Hub' },
+        { id: 'logger', icon: Activity, label: 'Log Book' },
+        { id: 'ratgeber', icon: BookOpen, label: 'Guides' },
+        { id: 'profile', icon: User, label: 'Profile' },
       ];
     }
     return [
