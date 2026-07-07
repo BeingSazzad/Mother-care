@@ -903,64 +903,145 @@ function ScreenSwitcher({
   pregnancyInfo: { gestationWeek: number; fruit: string };
   babyInfo: { ageString: string };
 }) {
+  const cyclePercent = Math.min(100, Math.max(0, (cycleInfo.cycleDay / 28) * 100));
+  const pregnancyPercent = Math.min(100, Math.max(0, (pregnancyInfo.gestationWeek / 40) * 100));
+
   return (
-    <div className="p-6 pt-3 animate-fade-in">
-      <div className="flex justify-between items-center mb-6">
-        <Menu className="w-6 h-6 text-brand-brown cursor-pointer" />
-        <div className="flex items-center gap-2">
-          <MammothLogo className="w-8 h-8" />
-          <span className="font-extrabold text-[18px] tracking-wide text-brand-brown">BAMUDI</span>
+    <div className="p-6 pt-4 animate-fade-in space-y-6 text-gray-900 bg-gradient-to-b from-[#FFFDFB] via-[#FFF5F0] to-[#FFF9F6] min-h-full">
+      {/* Premium Header */}
+      <div className="flex justify-between items-center bg-white/70 backdrop-blur-md p-3 -mx-3 rounded-3xl border border-white/50 shadow-2xs">
+        <div className="w-10 h-10 rounded-2xl hover:bg-gray-100/50 flex items-center justify-center cursor-pointer transition">
+          <Menu className="w-5 h-5 text-brand-brown" />
         </div>
-        <Bell className="w-6 h-6 text-brand-brown cursor-pointer" />
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-brand-brown rounded-2xl flex items-center justify-center shadow-xs">
+            <MammothLogo className="w-5 h-5 text-white" />
+          </div>
+          <span className="font-extrabold text-[16px] tracking-widest text-brand-brown uppercase">BAMUDI</span>
+        </div>
+        <div className="w-10 h-10 rounded-2xl hover:bg-gray-100/50 flex items-center justify-center cursor-pointer transition relative">
+          <Bell className="w-5 h-5 text-brand-brown" />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-brand-orange rounded-full ring-2 ring-white animate-pulse"></span>
+        </div>
       </div>
 
-      <div className="mb-6">
-        <h2 className="text-[22px] font-bold text-brand-brown mb-1 leading-snug">Hello, {userName}! 👋</h2>
-        <p className="text-[13px] text-brand-brown/70 font-normal">Welcome to your motherhood and cycle companion portal.</p>
+      {/* Hero Greeting Section */}
+      <div className="space-y-1 pl-1">
+        <h2 className="text-[26px] font-black text-brand-brown leading-tight tracking-tight">
+          Hello, <span className="bg-gradient-to-r from-brand-orange to-brand-brown bg-clip-text text-transparent">{userName}</span>! 👋
+        </h2>
+        <p className="text-[13px] text-brand-brown/70 font-medium tracking-wide">
+          Welcome to your motherhood and cycle companion portal.
+        </p>
       </div>
 
+      {/* Main Switcher Bento Area */}
       <div className="space-y-4">
         {/* Cycle Tracker Mode Card */}
         <div 
           onClick={() => onNavigate('menstrual')}
-          className="bg-white p-5 rounded-[28px] border border-brand-beige shadow-xs flex items-center justify-between cursor-pointer hover:border-brand-orange/40 transition-all duration-300"
+          className="bg-gradient-to-br from-[#FFF5F7] via-[#FFF2F5] to-[#FDE8EE] p-5 rounded-[32px] border border-[#FAD7E2]/60 shadow-xs hover:shadow-md hover:scale-[1.01] hover:border-[#F27E9F]/40 cursor-pointer transition-all duration-300 group relative overflow-hidden"
         >
-          <div className="flex-1 pr-3">
-            <span className="px-3 py-1 bg-brand-lightorange text-brand-orange rounded-full text-[10px] font-bold uppercase tracking-wider">Active Stage</span>
-            <h3 className="text-base font-bold text-brand-brown mt-2 mb-1">Cycle Tracker</h3>
-            <p className="text-[12px] text-gray-500 leading-snug">
-              Currently: Cycle Day {cycleInfo.cycleDay}. {cycleInfo.daysRemainingInPeriod > 0 ? `${cycleInfo.daysRemainingInPeriod} days left in period.` : cycleInfo.phase}
+          <div className="flex justify-between items-start mb-4 relative z-10">
+            <div className="pr-2">
+              <span className="px-3 py-1 bg-[#FDE5EF] text-[#F03C7A] rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-2xs">
+                {cycleInfo.phase}
+              </span>
+              <h3 className="text-[17px] font-black text-brand-brown mt-2.5">Cycle Tracker</h3>
+            </div>
+            <div className="w-14 h-14 bg-white/80 rounded-2xl shadow-sm border border-pink-100/60 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+              <span>🩸</span>
+            </div>
+          </div>
+          
+          {/* Mini progress bar */}
+          <div className="space-y-2 mt-2.5 relative z-10">
+            <div className="flex justify-between text-[11px] font-bold text-gray-500">
+              <span>Day {cycleInfo.cycleDay} / 28</span>
+              <span>{cycleInfo.daysRemainingInPeriod > 0 ? `${cycleInfo.daysRemainingInPeriod} days left` : 'Active'}</span>
+            </div>
+            <div className="w-full h-2 bg-pink-100/70 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-[#FF8FA3] to-[#F03C7A] rounded-full transition-all duration-500" 
+                style={{ width: `${cyclePercent}%` }}
+              ></div>
+            </div>
+            <p className="text-[12px] font-semibold text-[#F03C7A]/80 pt-0.5 leading-snug">
+              {cycleInfo.daysRemainingInPeriod > 0 
+                ? 'Menstrual phase is active. Stay comfortable! 🌸' 
+                : 'Track mood and log symptoms for best predictions.'}
             </p>
           </div>
-          <div className="w-14 h-14 bg-brand-lightorange rounded-2xl flex items-center justify-center text-3xl">🩸</div>
         </div>
 
         {/* Pregnancy Mode Card */}
         <div 
           onClick={() => onNavigate('pregnancy')}
-          className="bg-white p-5 rounded-[28px] border border-brand-beige shadow-xs flex items-center justify-between cursor-pointer hover:border-brand-brown/40 transition-all duration-300"
+          className="bg-gradient-to-br from-[#FFF7F0] via-[#FFF1E6] to-[#FDEADA] p-5 rounded-[32px] border border-orange-100/60 shadow-xs hover:shadow-md hover:scale-[1.01] hover:border-brand-orange/40 cursor-pointer transition-all duration-300 group relative overflow-hidden"
         >
-          <div className="flex-1 pr-3">
-            <span className="px-3 py-1 bg-brand-lightbrown text-brand-brown rounded-full text-[10px] font-bold uppercase tracking-wider">Weekly Updates</span>
-            <h3 className="text-base font-bold text-brand-brown mt-2 mb-1">Pregnancy Companion</h3>
-            <p className="text-[12px] text-gray-500 leading-snug">
-              Currently: Week {pregnancyInfo.gestationWeek}. Size of a {pregnancyInfo.fruit.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDFFF]/g, '')}.
+          <div className="flex justify-between items-start mb-4 relative z-10">
+            <div className="pr-2">
+              <span className="px-3 py-1 bg-[#FFF0E2] text-brand-orange rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-2xs">
+                Week {pregnancyInfo.gestationWeek}
+              </span>
+              <h3 className="text-[17px] font-black text-brand-brown mt-2.5">Pregnancy Companion</h3>
+            </div>
+            <div className="w-14 h-14 bg-white/80 rounded-2xl shadow-sm border border-orange-100/60 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+              <span>🤰</span>
+            </div>
+          </div>
+
+          {/* Mini progress bar */}
+          <div className="space-y-2 mt-2.5 relative z-10">
+            <div className="flex justify-between text-[11px] font-bold text-gray-500">
+              <span>Week {pregnancyInfo.gestationWeek} / 40</span>
+              <span>Size of a {pregnancyInfo.fruit.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDFFF]/g, '')}</span>
+            </div>
+            <div className="w-full h-2 bg-orange-100/60 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-amber-400 to-brand-orange rounded-full transition-all duration-500" 
+                style={{ width: `${pregnancyPercent}%` }}
+              ></div>
+            </div>
+            <p className="text-[12px] font-semibold text-brand-orange/80 pt-0.5 leading-snug">
+              Currently in {pregnancyInfo.gestationWeek > 27 ? '3rd Trimester' : pregnancyInfo.gestationWeek > 13 ? '2nd Trimester' : '1st Trimester'}. Baby is growing beautifully!
             </p>
           </div>
-          <div className="w-14 h-14 bg-brand-lightbrown rounded-2xl flex items-center justify-center text-3xl">🤰</div>
         </div>
 
         {/* Baby Mode Card (Bamudi Kompass) */}
         <div 
           onClick={() => onNavigate('dashboard')}
-          className="bg-brand-lightgreen p-5 rounded-[28px] border-2 border-brand-green/30 shadow-xs flex items-center justify-between cursor-pointer hover:border-brand-green transition-all duration-300"
+          className="bg-gradient-to-br from-[#EAF6ED] via-[#DFEDE2] to-[#D5E6D8] p-5 rounded-[32px] border border-emerald-100/60 shadow-xs hover:shadow-md hover:scale-[1.01] hover:border-brand-green/40 cursor-pointer transition-all duration-300 group relative overflow-hidden"
         >
-          <div className="flex-1 pr-3">
-            <span className="px-3 py-1 bg-white text-brand-green rounded-full text-[10px] font-bold uppercase tracking-wider">6 Growth Phases</span>
-            <h3 className="text-base font-bold text-brand-green mt-2 mb-1">Bamudi Kompass</h3>
-            <p className="text-[12px] text-brand-green/80 leading-snug">Active baby: **{selectedBaby}** ({babyInfo.ageString}). Track milestones.</p>
+          <div className="flex justify-between items-start mb-4 relative z-10">
+            <div className="pr-2">
+              <span className="px-3 py-1 bg-[#EEF8F1] text-brand-green rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-2xs">
+                Active Baby
+              </span>
+              <h3 className="text-[17px] font-black text-brand-green mt-2.5">Bamudi Kompass</h3>
+            </div>
+            <div className="w-14 h-14 bg-white/80 rounded-2xl shadow-sm border border-emerald-100/60 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+              <span>👶</span>
+            </div>
           </div>
-          <div className="w-14 h-14 bg-white/70 rounded-2xl flex items-center justify-center text-3xl">👶</div>
+
+          {/* Baby Status details */}
+          <div className="space-y-2 mt-2.5 relative z-10">
+            <div className="flex justify-between text-[11px] font-bold text-emerald-800/80">
+              <span>Baby Profile: {selectedBaby}</span>
+              <span>{babyInfo.ageString}</span>
+            </div>
+            <div className="w-full h-2 bg-emerald-100/70 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-teal-400 to-brand-green rounded-full transition-all duration-500" 
+                style={{ width: '50%' }}
+              ></div>
+            </div>
+            <p className="text-[12px] font-semibold text-brand-green/80 pt-0.5 leading-snug">
+              Milestones: Phase 1 Checklist (50% completed). Track growth.
+            </p>
+          </div>
         </div>
       </div>
     </div>
