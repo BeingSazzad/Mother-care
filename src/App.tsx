@@ -808,7 +808,7 @@ function ScreenOnboarding({
                 }`}
               >
                 <div>
-                  <h3 className="text-sm font-bold text-brand-brown">Baby Dashboard (Kompass)</h3>
+                  <h3 className="text-sm font-bold text-brand-brown">Baby Dashboard (Compass)</h3>
                   <p className="text-[11px] text-gray-500 font-semibold mt-0.5">Track baby milestones and development</p>
                 </div>
                 <span className="text-2xl">👶</span>
